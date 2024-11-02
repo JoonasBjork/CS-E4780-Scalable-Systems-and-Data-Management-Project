@@ -6,8 +6,16 @@ services:
     image: redis
     restart: on-failure
     ports:
-    - 6379:6379
+      - 6379:6379
     volumes:
-    - ./src/ingress-redis-streams/data:/data
-    - ./src/ingress-redis-streams/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./src/ingress-redis-streams/data:/data
+      - ./src/ingress-redis-streams/redis.conf:/usr/local/etc/redis/redis.conf
     entrypoint: redis-server /usr/local/etc/redis/redis.conf
+
+  worker:
+    container_name: worker
+    build:
+      context: ./src/worker
+      dockerfile: Dockerfile
+    depends_on: 
+      - redis-streams
