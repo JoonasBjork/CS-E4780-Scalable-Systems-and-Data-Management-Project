@@ -1,7 +1,8 @@
-use redis::{Commands, RedisError};
+use redis::streams::{StreamReadOptions, StreamReadReply};
+use redis::{Commands, RedisError, RedisResult};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
-use std::time::Duration;
+// use std::time::Duration;
 
 fn main() -> Result<(), RedisError> {
     // Shared data structure between threads: a vector protected by a Mutex
@@ -15,60 +16,38 @@ fn main() -> Result<(), RedisError> {
     let mut con = client.get_connection()?;
     println!("Created connection");
     let stream_key = "s1";
-    let mut latest_id_res: Result<Vec<(String, Vec<(String, String)>)>, RedisError>;
-    let mut latest_id: String;
+    let mut latest_id: String = "0".to_string();
 
-    loop {
-        latest_id_res = con.xrevrange_count(stream_key, "+", "-", 1);
-
-        match latest_id_res {
-            Ok(vec) if !vec.is_empty() => {
-                println!("Received a non-empty result.");
-                latest_id = vec[0].0.clone();
-                println!("Retrieved latest_id from Redis: {}", latest_id);
-                break;
-            }
-            Ok(_) => {
-                println!(
-                    "The latest ID result is empty for stream {}. Waiting for new messages...",
-                    stream_key
-                );
-            }
-            Err(err) => {
-                println!("Error occurred in fecthing latest id: {}", err);
-            }
-        }
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+    let options = StreamReadOptions::default().block(5000);
+    let mut iter: i32 = 0;
 
     let data_producer = Arc::clone(&data);
     let producer = thread::spawn(move || {
         loop {
-            println!("Starting a new read iteration");
             // Retrieve messages from the Redis stream starting from the last ID
-            let result: Result<Vec<(String, Vec<(String, String)>)>, RedisError> =
-                con.xread(&[stream_key], &[latest_id.clone()]); // Use latest_id
+            println!(
+                "Reading values from stream {}, iter {}, latest_id {}",
+                stream_key, iter, latest_id
+            );
+            iter += 1;
+            let result: RedisResult<StreamReadReply> =
+                con.xread_options(&[stream_key], &[latest_id.clone()], &options); // Use latest_id
 
             match result {
                 Ok(messages) => {
                     println!("Received messages: {:?}", messages);
-                    for message in messages {
-                        let (id, fields) = message; // Each message has an ID and fields
+                    for stream in messages.keys {
+                        for entry in stream.ids {
+                            latest_id = entry.id.clone();
+                            for (field, value) in entry.map {
+                                let (lock, cvar) = &*data_producer;
+                                let mut vec = lock.lock().unwrap();
+                                vec.push(value.clone()); // Push the value to the shared vector
 
-                        // Iterate over all key-value pairs in fields
-                        for (key, value) in fields {
-                            let (lock, cvar) = &*data_producer;
-                            let mut vec = lock.lock().unwrap();
-                            vec.push(value.clone()); // Push the value to the shared vector
-
-                            // Notify the consumer that an item has been added
-                            cvar.notify_one();
-                            println!("Producer added an item: Key: {}, Value: {}", key, value);
+                                cvar.notify_one();
+                                println!("ID: {}, Field: {}, value: {:?}", entry.id, field, value)
+                            }
                         }
-
-                        // Update latest_id to the ID of the processed message
-                        latest_id = id; // Update the latest ID after processing
                     }
                 }
                 Err(e) => {
@@ -76,8 +55,7 @@ fn main() -> Result<(), RedisError> {
                 }
             }
 
-            // Sleep for a while to avoid busy waiting
-            thread::sleep(Duration::new(1, 0));
+            // thread::sleep(Duration::new(1, 0));
         }
     });
 
@@ -96,7 +74,7 @@ fn main() -> Result<(), RedisError> {
 
             // Consume the item
             if let Some(item) = vec.pop() {
-                println!("Consumer consumed: {}", item);
+                println!("Consumer consumed: {:?}", item);
             }
         }
     });
