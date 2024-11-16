@@ -142,10 +142,13 @@ fn main() -> Result<(), RedisError> {
         println!("Ema consumer taking read_lock");
         let read_lock = ema_consumer_data.read().unwrap();
         for (id, mutex) in read_lock.iter() {
-            println!("Ema consumer");
-            let indicator = mutex.lock().unwrap();
+            let mut indicator = mutex.lock().unwrap();
 
             println!("EMA CONSUMER id: {:?}, indicator: {}", id, indicator);
+
+            let (ema_38, ema_100) = indicator.calculate_both_emas();
+
+            println!("Found updated emas: {}, {}", ema_38, ema_100);
         }
     });
 
