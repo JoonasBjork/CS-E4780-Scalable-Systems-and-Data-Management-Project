@@ -20,7 +20,6 @@ fn string_from_value(ov: Option<&Value>) -> Option<String> {
 }
 
 fn float_from_value(ov: Option<&Value>) -> Option<f64> {
-    println!("float_from_value got input: {:?}", ov);
     match ov {
         Some(v) => match v {
             Value::BulkString(f) => {

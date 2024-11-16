@@ -11,9 +11,10 @@ services:
     entrypoint: redis-server /usr/local/etc/redis/redis.conf
 
   worker:
-    container_name: worker
     build:
       context: ./src/worker
       dockerfile: Dockerfile
     depends_on:
       - redis-streams
+    deploy:
+      replicas: 2

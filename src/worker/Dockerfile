@@ -18,4 +18,13 @@ FROM debian:bullseye-slim
 # COPY --from=builder /app/target/release/worker /usr/local/bin/worker
 COPY --from=builder /app/target/debug/worker /usr/local/bin/worker
 
-CMD ["worker"]
+
+#### This portion is a hack to get the container identifier for selecting streams. 
+RUN apt update
+RUN apt install -y dnsutils
+
+COPY startup.sh /usr/local/bin/startup.sh
+RUN chmod +x /usr/local/bin/startup.sh
+
+# CMD ["worker"]
+CMD ["sh", "/usr/local/bin/startup.sh"]

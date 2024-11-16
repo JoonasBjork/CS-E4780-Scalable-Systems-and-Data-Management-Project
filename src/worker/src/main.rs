@@ -6,13 +6,42 @@ use redis::{Commands, RedisError, RedisResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread;
+use std::time::Duration;
+use std::{env, process};
 
 use data_entry::DataEntry;
 use quantitative_indicators::{QuantitativeIndicator, TimestampedValue};
 
-use std::time::Duration;
-
 fn main() -> Result<(), RedisError> {
+    // ********** Setting up the chosen stream **********
+
+    let replica_index: i32 = match env::var("REPLICA_INDEX") {
+        Ok(value) => match value.parse::<i32>() {
+            Ok(int) => int,
+            Err(_) => {
+                eprintln!("Error: REPLICA_INDEX must be a valid integer.");
+                process::exit(1);
+            }
+        },
+        Err(_) => {
+            eprintln!("Error: REPLICA_INDEX environment variable is not set.");
+            process::exit(1);
+        }
+    };
+
+    let stream_key = format!("s{}", replica_index);
+
+    // ********** Opening a Redis Client connection **********
+
+    let client = redis::Client::open("redis://redis-streams:6379/")?;
+    let mut con = client.get_connection()?;
+
+    let mut latest_id: String = "0".to_string();
+
+    let options = StreamReadOptions::default().block(5000);
+
+    // ********** Setting up the shared data structures between the threads **********
+
     // Shared data structure between threads for alerts: a vector protected by a Mutex
     let alert_data = Arc::new((Mutex::new(Vec::new()), Condvar::new()));
 
@@ -20,29 +49,22 @@ fn main() -> Result<(), RedisError> {
         HashMap::<String, Mutex<QuantitativeIndicator>>::new(),
     ));
 
-    // Redis connection
-    let client = redis::Client::open("redis://redis-streams:6379/")?;
-    let mut con = client.get_connection()?;
-    println!("Created redis connection");
-    let stream_key = "s1";
-    let mut latest_id: String = "0".to_string();
-
-    let options = StreamReadOptions::default().block(5000);
-    let mut iter: i32 = 0;
+    // ********** Producer thread **********
 
     let alert_producer_data = Arc::clone(&alert_data);
     let ema_producer_data = Arc::clone(&ema_data);
 
     let producer = thread::spawn(move || {
+        let mut iter: i32 = 0;
         loop {
             // Retrieve messages from the Redis stream starting from the last ID
             println!(
                 "Reading values from stream {}, iter {}, latest_id {}",
-                stream_key, iter, latest_id
+                &stream_key, iter, latest_id
             );
             iter += 1;
             let result: RedisResult<StreamReadReply> =
-                con.xread_options(&[stream_key], &[latest_id.clone()], &options); // Use latest_id
+                con.xread_options(&[&stream_key], &[latest_id.clone()], &options); // Use latest_id
 
             match result {
                 Ok(messages) => {
@@ -114,6 +136,8 @@ fn main() -> Result<(), RedisError> {
         }
     });
 
+    // ********** Alert consumer thread **********
+
     // The alert consumer consumes error events as they get added to that
     let alert_consumer_data = Arc::clone(&alert_data);
     let alert_consumer = thread::spawn(move || {
@@ -134,11 +158,11 @@ fn main() -> Result<(), RedisError> {
         }
     });
 
+    // ********** Ema consumer thread **********
+
     let ema_consumer_data = Arc::clone(&ema_data);
     let ema_consumer: thread::JoinHandle<_> = thread::spawn(move || loop {
         thread::sleep(Duration::from_secs(10));
-        println!("Ema consumer woke up");
-
         println!("Ema consumer taking read_lock");
         let read_lock = ema_consumer_data.read().unwrap();
         for (id, mutex) in read_lock.iter() {
