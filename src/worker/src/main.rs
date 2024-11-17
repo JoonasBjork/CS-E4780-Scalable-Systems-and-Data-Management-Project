@@ -68,7 +68,7 @@ fn main() -> Result<(), RedisError> {
 
             match result {
                 Ok(messages) => {
-                    println!("Received messages: {:?}", messages);
+                    // println!("Received messages: {:?}", messages);
                     for stream in messages.keys {
                         for entry in stream.ids {
                             latest_id = entry.id.clone();
