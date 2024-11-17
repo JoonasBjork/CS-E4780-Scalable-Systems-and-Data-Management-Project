@@ -1,6 +1,8 @@
 mod data_entry;
+mod postgres_connector;
 mod quantitative_indicators;
 
+use postgres_connector::{add_alert, create_postgres_client};
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{Commands, RedisError, RedisResult};
 use std::collections::HashMap;
@@ -33,12 +35,11 @@ fn main() -> Result<(), RedisError> {
 
     // ********** Opening a Redis Client connection **********
 
-    let client = redis::Client::open("redis://redis-streams:6379/")?;
-    let mut con = client.get_connection()?;
+    let redis_client = redis::Client::open("redis://redis-streams:6379/")?;
+    let mut redis_con = redis_client.get_connection()?;
+    let redis_options = StreamReadOptions::default().block(5000);
 
     let mut latest_id: String = "0".to_string();
-
-    let options = StreamReadOptions::default().block(5000);
 
     // ********** Setting up the shared data structures between the threads **********
 
@@ -64,7 +65,7 @@ fn main() -> Result<(), RedisError> {
             );
             iter += 1;
             let result: RedisResult<StreamReadReply> =
-                con.xread_options(&[&stream_key], &[latest_id.clone()], &options); // Use latest_id
+                redis_con.xread_options(&[&stream_key], &[latest_id.clone()], &redis_options); // Use latest_id
 
             match result {
                 Ok(messages) => {
@@ -141,6 +142,15 @@ fn main() -> Result<(), RedisError> {
     // The alert consumer consumes error events as they get added to that
     let alert_consumer_data = Arc::clone(&alert_data);
     let alert_consumer = thread::spawn(move || {
+        thread::sleep(Duration::from_secs(10));
+
+        let mut postgres_client = create_postgres_client(
+            "postgres://username:password@database:5432/database".to_string(),
+            3,
+            10,
+        )
+        .expect("Alert consumer was not able to connect to Postgres");
+
         loop {
             let (lock, cvar) = &*alert_consumer_data;
 
@@ -154,6 +164,13 @@ fn main() -> Result<(), RedisError> {
             // Consume the item
             if let Some(item) = vec.pop() {
                 println!("alert_consumer consumed: {:?}", item);
+                let alert_res = add_alert(&mut postgres_client, item);
+                match alert_res {
+                    Ok(changed_lines) => {
+                        println!("Alert_consumer added {} lines in postgres", changed_lines)
+                    }
+                    Err(e) => println!("Alert_consumer got error while adding to postgres: {}", e),
+                }
             }
         }
     });
@@ -162,6 +179,10 @@ fn main() -> Result<(), RedisError> {
 
     let ema_consumer_data = Arc::clone(&ema_data);
     let ema_consumer: thread::JoinHandle<_> = thread::spawn(move || loop {
+        // let mut postgres_client =
+        //     create_postgres_client("Localhost".to_string(), "postgres".to_string())
+        //         .expect("Alert consumer was not able to connect to Postgres");
+
         thread::sleep(Duration::from_secs(10));
         println!("Ema consumer taking read_lock");
         let read_lock = ema_consumer_data.read().unwrap();

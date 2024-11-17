@@ -7,15 +7,10 @@ COPY Cargo.toml ./
 # Cargo.lock
 COPY src/ ./src/
 RUN cargo build
-# RUN cargo build --release
 
-# Build app
-# RUN cargo build --release
-# RUN cargo install --path .
 
 # Use smaller base image for final build
 FROM debian:bullseye-slim
-# COPY --from=builder /app/target/release/worker /usr/local/bin/worker
 COPY --from=builder /app/target/debug/worker /usr/local/bin/worker
 
 
@@ -26,5 +21,14 @@ RUN apt install -y dnsutils
 COPY startup.sh /usr/local/bin/startup.sh
 RUN chmod +x /usr/local/bin/startup.sh
 
-# CMD ["worker"]
 CMD ["sh", "/usr/local/bin/startup.sh"]
+
+
+
+# RUN cargo build --release
+
+# Build app
+# RUN cargo build --release
+# RUN cargo install --path .
+
+# COPY --from=builder /app/target/release/worker /usr/local/bin/worker
