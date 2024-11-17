@@ -1,5 +1,5 @@
 CREATE TABLE alerts (
-    id SERIAL PRIMARY KEY, -- The alerts can be queries based on the id (just always query for alerts that have come after the last retrieved id)
+    id SERIAL PRIMARY KEY, -- The alerts can be queried based on the id (just always query for alerts that have come after the last retrieved id)
     symbol VARCHAR(32),
     sectype VARCHAR(1),
     last FLOAT,
