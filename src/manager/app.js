@@ -27,7 +27,7 @@ const stringToNumber = (str) => {
 
 // make to stream name
 const streamName = (str) => {
-    let id_number = stringToNumber(str) % workerCount;
+    let id_number = stringToNumber(str) % workerCount + 1;
     return `s${id_number}`;
 };
 
@@ -58,7 +58,7 @@ const test = async (request) => {
 const urlMapping = [
     {
       method: "GET",
-      pattern: new URLPattern({ pathname: "/w" }),
+      pattern: new URLPattern({ pathname: "/" }),
       fn: test,
     }
 ];
