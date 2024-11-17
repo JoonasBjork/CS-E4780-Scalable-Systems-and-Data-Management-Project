@@ -3,10 +3,21 @@ FROM rust:1.82-bullseye AS builder
 WORKDIR /app
 
 # Build dependencies
-COPY Cargo.toml ./ 
+COPY Cargo.toml Cargo.lock ./ 
+
+# Optimization to create a dummy main file to precompile dependencies before bringing the real project
+# https://github.com/rust-lang/cargo/issues/2644#issuecomment-2335499312
+RUN \
+  mkdir -v src && \
+  echo 'fn main() {}' > src/main.rs && \
+  cargo build && \
+  rm -Rvf src
+
 # Cargo.lock
 COPY src/ ./src/
-RUN cargo build
+RUN \
+  touch src/main.rs && \
+  cargo build
 
 
 # Use smaller base image for final build
