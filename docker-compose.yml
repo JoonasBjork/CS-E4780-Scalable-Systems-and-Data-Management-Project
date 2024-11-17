@@ -37,3 +37,21 @@ services:
     command: -connectRetries=60 -baselineOnMigrate=true migrate
     env_file:
       - src/project.env
+
+  manager:
+    build:
+      context: ./src/manager
+      dockerfile: Dockerfile
+    image: manager
+    restart: "no"
+    volumes:
+      - ./src/manager/:/app
+    expose:
+      - 7777
+    ports:
+      - 7777:7777
+    depends_on:
+      - flyway
+      - redis-streams
+    environment:
+      - MY_ENV_VAR=${WORKER_COUNT}
