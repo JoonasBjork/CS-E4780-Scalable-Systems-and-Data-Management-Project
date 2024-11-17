@@ -19,7 +19,7 @@ services:
       - database
       - flyway
     deploy:
-      replicas: 2
+      replicas: ${WORKER_COUNT} # Retrieved automtaically from .env file
 
   database:
     container_name: database-server-dab-p2-cad31c90-8310-42b6-97cd-efa824f683ba
