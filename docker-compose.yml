@@ -55,3 +55,12 @@ services:
       - redis-streams
     environment:
       - MY_ENV_VAR=${WORKER_COUNT}
+
+  simulator:
+    build:
+      context: ./src/simulator
+      dockerfile: Dockerfile
+    depends_on:
+      - redis-streams
+    volumes:
+      - ./data/:/data

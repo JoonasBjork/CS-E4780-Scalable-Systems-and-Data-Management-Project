@@ -4,5 +4,5 @@ DATE_OFFSET = 2
 PRICE_OFFSET = 21
 TIME_OFFSET = 23
 
-CSV_FILE = 'debs2022-gc-trading-day-08-11-21.csv'
+CSV_FILE = '/data/debs2022-gc-trading-day-08-11-21.csv'
 STREAM_NAME = 'ingress'
