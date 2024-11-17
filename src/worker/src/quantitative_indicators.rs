@@ -4,7 +4,7 @@ use std::fmt;
 #[derive(Debug)]
 pub struct TimestampedValue {
     pub value: f64,
-    timestamp: NaiveDateTime,
+    pub timestamp: NaiveDateTime,
 }
 
 impl TimestampedValue {
@@ -28,10 +28,12 @@ impl fmt::Display for TimestampedValue {
 }
 
 pub struct QuantitativeIndicator {
-    ema_38: f64,
-    prev_ema_38: f64,
-    ema_100: f64,
-    prev_ema_100: f64,
+    pub ema_38: f64,
+    pub prev_ema_38: f64,
+    pub ema_100: f64,
+    pub prev_ema_100: f64,
+    pub bullish: bool,
+    pub bearish: bool,
     pub most_recent_value: Option<TimestampedValue>,
 }
 
@@ -42,6 +44,8 @@ impl QuantitativeIndicator {
             prev_ema_38: 0.0,
             ema_100: 0.0,
             prev_ema_100: 0.0,
+            bullish: false,
+            bearish: false,
             most_recent_value: most_recent_value,
         }
     }
@@ -87,6 +91,9 @@ impl QuantitativeIndicator {
     pub fn calculate_both_emas(&mut self) -> (f64, f64) {
         let ema_38 = self.calculate_new_ema_38();
         let ema_100 = self.calculate_new_ema_100();
+
+        self.bullish = self.ema_38 > self.ema_100 && self.prev_ema_38 <= self.prev_ema_100;
+        self.bearish = self.ema_38 < self.ema_100 && self.prev_ema_38 >= self.prev_ema_100;
         self.most_recent_value = None;
 
         return (ema_38, ema_100);

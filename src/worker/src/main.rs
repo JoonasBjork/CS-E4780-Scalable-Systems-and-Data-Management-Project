@@ -2,7 +2,7 @@ mod data_entry;
 mod postgres_connector;
 mod quantitative_indicators;
 
-use postgres_connector::{add_alert, create_postgres_client};
+use postgres_connector::{create_postgres_client, insert_alert, insert_indicator};
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{Commands, RedisError, RedisResult};
 use std::collections::HashMap;
@@ -164,7 +164,7 @@ fn main() -> Result<(), RedisError> {
             // Consume the item
             if let Some(item) = vec.pop() {
                 println!("alert_consumer consumed: {:?}", item);
-                let alert_res = add_alert(&mut postgres_client, item);
+                let alert_res = insert_alert(&mut postgres_client, item);
                 match alert_res {
                     Ok(changed_lines) => {
                         println!("Alert_consumer added {} lines in postgres", changed_lines)
@@ -179,21 +179,29 @@ fn main() -> Result<(), RedisError> {
 
     let ema_consumer_data = Arc::clone(&ema_data);
     let ema_consumer: thread::JoinHandle<_> = thread::spawn(move || loop {
-        // let mut postgres_client =
-        //     create_postgres_client("Localhost".to_string(), "postgres".to_string())
-        //         .expect("Alert consumer was not able to connect to Postgres");
+        let mut postgres_client = create_postgres_client(
+            "postgres://username:password@database:5432/database".to_string(),
+            3,
+            10,
+        )
+        .expect("Ema consumer was not able to connect to Postgres");
 
         thread::sleep(Duration::from_secs(10));
         println!("Ema consumer taking read_lock");
         let read_lock = ema_consumer_data.read().unwrap();
         for (id, mutex) in read_lock.iter() {
             let mut indicator = mutex.lock().unwrap();
+            indicator.calculate_both_emas();
+            let indicator_ref = &*indicator;
 
-            println!("EMA CONSUMER id: {:?}, indicator: {}", id, indicator);
+            let insert_indicator_res = insert_indicator(&mut postgres_client, id, indicator_ref);
 
-            let (ema_38, ema_100) = indicator.calculate_both_emas();
-
-            println!("Found updated emas: {}, {}", ema_38, ema_100);
+            match insert_indicator_res {
+                Ok(changed_lines) => {
+                    println!("EMA consumer added {} lines in postgres", changed_lines)
+                }
+                Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
+            }
         }
     });
 
