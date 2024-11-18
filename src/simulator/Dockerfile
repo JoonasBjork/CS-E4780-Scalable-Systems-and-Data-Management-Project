@@ -14,4 +14,5 @@ COPY . /app
 
 
 # Run app.py when the container launches
-CMD ["python", "main.py"]
+# -u uses unbuffered stdout (e.g. all prints come into console)
+CMD ["python", "-u", "main.py"]
