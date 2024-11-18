@@ -43,24 +43,28 @@ while(1){
         block: 0
     });
     if(stock_data){
-        const message = stock_data[0].messages[0].message;
-        
-        let id = message.id;
-        let sectype = message.sectype;
-        let last = message.last;
-        let time = message.time;
-        let date = message.date;
-        let queue_name = streamName(id);
-        try {
-            await client.xAdd(queue_name, '*',{
-            id: id,
-            sectype: sectype,
-            last: last,
-            time: time,
-            date: date
-        });
-        } catch (error) {
-            console.error('failiure to  scale', error);
+        for (let i = 0; i < stock_data[0].messages.length; i++) {
+            const message = stock_data[0].messages[i].message;
+            let message_id = stock_data[0].messages[i].id;
+            let id = message.id;
+            let sectype = message.sectype;
+            let last = message.last;
+            let time = message.time;
+            let date = message.date;
+            let queue_name = streamName(id);
+            try {
+                await client.xAdd(queue_name, '*',{
+                    id: id,
+                    sectype: sectype,
+                    last: last,
+                    time: time,
+                    date: date
+                });
+                await client.xDel('ingress', message_id);
+            } catch (error) {
+                console.error('failiure to  scale', error);
+            }
+
         }
         stock_data = null;
     }
