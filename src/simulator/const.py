@@ -10,6 +10,8 @@ STREAM_NAME = 'ingress'
 MANAGER_URL = 'http://manager:7777'
 
 import os 
-if os.environ['DEVLOCAL']:
+
+devlocal = os.environ.get('DEVLOCAL')
+if devlocal is not None and devlocal.lower() in ['1', 'true', 'yes']:
     CSV_FILE = '../../data/debs2022-gc-trading-day-08-11-21.csv'
     MANAGER_URL = 'http://localhost:7777'
