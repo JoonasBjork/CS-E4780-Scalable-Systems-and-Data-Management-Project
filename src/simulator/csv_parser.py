@@ -38,6 +38,7 @@ def csv_row_to_redis(row: list[str], exact_time: int) -> dict[str, str]:
 
 def parser_run(csv_file: str, queue: queue.Queue) -> None:
     try:
+        # error_count, normal_count = 0, 0
         print("[PARSER] Parser stated")
         generator = parse_csv(csv_file)
 
@@ -60,10 +61,14 @@ def parser_run(csv_file: str, queue: queue.Queue) -> None:
         try:    
             while True:
                 record = next(generator)
-                if record[TIME_OFFSET] and record[PRICE_OFFSET]:
-                    timestamp = parse_time(record[TIME_OFFSET])
-                    queue.put(csv_row_to_redis(record, shifted_time + timestamp))
-                    
+                timestamp = parse_time(record[TIME_OFFSET])
+                queue.put(csv_row_to_redis(record, shifted_time + timestamp))
+                # if record[TIME_OFFSET] and record[PRICE_OFFSET]:
+                #     normal_count += 1
+                # else:
+                #     error_count += 1
+                # if (normal_count + error_count) % 1000000 == 0:
+                #     print(f'Error percentage: {error_count / (normal_count + error_count)}')
         except StopIteration:
             return
     except KeyboardInterrupt:
