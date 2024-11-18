@@ -63,7 +63,9 @@ def publisher_run_http(queue: Queue) -> None:
                 current_time = datetime.now().strftime('%H:%M:%S.%f')
                 # print(f"[PUBLISHER] next event at: {data_time}")
                 # print(f"[PUBLISHER] current row: {item}")
-                
+            
+            item['time'] = item['time'].replace('.', ':') # To keep the original timestamp formatting, the fraction has to be separated with a colon
+
             # Use content-type: application/x-www-form-urlencoded to avoid json
             # print(f"TRYING TO POST TO {url}, with item {item}")
             try:

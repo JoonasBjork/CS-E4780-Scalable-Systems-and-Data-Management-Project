@@ -33,12 +33,16 @@ const streamName = (str) => {
 
 // function of url map
 const test = async (request) => {
-    let id = "id3";
-    let sectype = 'I';
-    let last = '11.105000';
-    let time = '09:19:44:743';
-    let date = '08-11-2021';
-    let queue_name = streamName(id);
+    const bodyText = await request.text();
+    const params = new URLSearchParams(bodyText);
+    const body = Object.fromEntries(params);
+    // console.log(body);
+    let id = body.id;
+    let sectype = body.sectype;
+    let last = body.last;
+    let time = body.time;
+    let date = body.date;
+    let queue_name = streamName(body.id);
     try {
       await client.xAdd(queue_name, '*',{
         id: id,
@@ -57,7 +61,7 @@ const test = async (request) => {
 // url mapping
 const urlMapping = [
     {
-      method: "GET",
+      method: "POST",
       pattern: new URLPattern({ pathname: "/" }),
       fn: test,
     }
