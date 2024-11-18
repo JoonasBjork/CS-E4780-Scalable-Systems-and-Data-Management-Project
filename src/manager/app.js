@@ -2,7 +2,7 @@ import { serve } from "./deps.js";
 import { createClient } from "npm:redis@4.6.4";
 
 // the number of workers
-const workerCount = Deno.env.get("MY_ENV_VAR");
+const workerCount = Deno.env.get("WORKER_COUNT");
 // connect to redis
 const client = createClient({
     url: "redis://redis:6379",
