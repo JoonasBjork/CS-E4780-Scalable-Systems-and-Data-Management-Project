@@ -26,8 +26,17 @@ def parse_time(time_str: str) -> float:
     except ValueError as e:
         raise ValueError(f"Invalid time format: {time_str}") from e
 
-def csv_row_to_redis(row: list[str], exact_time: int) -> dict[str, str]:
+def csv_row_to_redis(row: list[str], exact_time: datetime | None) -> dict[str, str]:
     ''' Read only required information from a csv row '''
+    if exact_time is None:
+        return {
+            'id': row[ID_OFFSET], 
+            'sectype': row[SEC_TYPE_OFFSET],
+            'last': row[PRICE_OFFSET],
+            'time': '', 
+            'date': row[DATE_OFFSET]
+        }
+     
     return {
         'id': row[ID_OFFSET], 
         'sectype': row[SEC_TYPE_OFFSET],
@@ -61,8 +70,11 @@ def parser_run(csv_file: str, queue: queue.Queue) -> None:
         try:    
             while True:
                 record = next(generator)
-                timestamp = parse_time(record[TIME_OFFSET])
-                queue.put(csv_row_to_redis(record, shifted_time + timestamp))
+                if record[TIME_OFFSET]:
+                    timestamp = parse_time(record[TIME_OFFSET])
+                    queue.put(csv_row_to_redis(record, shifted_time + timestamp))
+                else: 
+                    queue.put(csv_row_to_redis(record, None))
                 # if record[TIME_OFFSET] and record[PRICE_OFFSET]:
                 #     normal_count += 1
                 # else:

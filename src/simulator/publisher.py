@@ -13,7 +13,7 @@ def publisher_run_redis(queue: Queue) -> None:
 
         # Initialize the redis client parameter
         # TODO: Please change the parameter here if necessary
-        redis_client = redis.Redis(host='redis-streams', port=6379)
+        redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
         stream_name = STREAM_NAME
         redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
 
