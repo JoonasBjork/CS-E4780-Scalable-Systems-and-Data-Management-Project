@@ -2,10 +2,12 @@ from queue import Queue
 import redis
 from datetime import datetime
 import time
+import requests
 
 from const import *
 
-def publisher_run(queue: Queue) -> None:
+def publisher_run_redis(queue: Queue) -> None:
+    """ The publisher will emit event through redis stream"""
     try:
         print("[PUBLISHER] Publisher started")
 
@@ -35,3 +37,34 @@ def publisher_run(queue: Queue) -> None:
                 redis_client.xadd(stream_name, item)
     except KeyboardInterrupt:
         return
+    
+def publisher_run_http(queue: Queue) -> None:
+    """ The publisher will emit event through http requests"""
+    try:
+        print("[PUBLISHER] Publisher for http started")
+
+        # Initialize the redis client parameter
+        # TODO: Please change the parameter here if necessary
+        url = MANAGER_URL
+
+        while True:
+            if queue.not_empty:
+                item = queue.get()
+                
+                current_time = datetime.now().strftime('%H:%M:%S.%f')
+
+                # Convert the time field of data to seconds
+                data_time = item['time']
+
+                # Wait until the current time matches or exceeds the desired time
+                while current_time < data_time:
+                    time.sleep(0.1)  # Sleep for a second before checking again
+                    current_time = datetime.now().strftime('%H:%M:%S.%f')
+                    # print(f"[PUBLISHER] next event at: {data_time}")
+                    # print(f"[PUBLISHER] current row: {item}")
+                    
+                # Use content-type: application/x-www-form-urlencoded to avoid json
+                requests.post(url, data=item) 
+    except KeyboardInterrupt:
+        return
+    
