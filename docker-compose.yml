@@ -46,10 +46,6 @@ services:
     restart: "no"
     volumes:
       - ./src/manager/:/app
-    expose:
-      - 7777
-    ports:
-      - 7777:7777
     depends_on:
       - flyway
       - redis-streams
@@ -62,5 +58,6 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - redis-streams
+      - manager
     volumes:
       - ./data/:/data

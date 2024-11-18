@@ -1,13 +1,13 @@
-import { serve } from "./deps.js";
 import { createClient } from "npm:redis@4.6.4";
 
 // the number of workers
 const workerCount = Deno.env.get("WORKER_COUNT");
 // connect to redis
 const client = createClient({
-    url: "redis://redis:6379",
+    url: "redis://redis-streams:6379",
     pingInterval: 1000,
 })
+
 
 try {
     await client.connect();
@@ -31,65 +31,37 @@ const streamName = (str) => {
     return `s${id_number}`;
 };
 
-// let iter = 0;
-// function of url map
-const test = async (request) => {
-    const bodyText = await request.text();
-    const params = new URLSearchParams(bodyText);
-    const body = Object.fromEntries(params);
-
-    // console.log("Manager Iter:", iter);
-    // iter += 1;
-
-    let id = body.id;
-    let sectype = body.sectype;
-    let last = body.last;
-    let time = body.time;
-    let date = body.date;
-    let queue_name = streamName(body.id);
-    try {
-      await client.xAdd(queue_name, '*',{
-        id: id,
-        sectype: sectype,
-        last: last,
-        time: time,
-        date: date
+while(1){
+    let stock_data = await client.xReadGroup(
+        'managers',
+        "manager1",
+      {
+        key: 'ingress',
+        id: '>'
+      }, {
+        count: 1,
+        block: 0
     });
-      return new Response("OK", { status: 200 }); 
-    } catch (error) {
-      console.error('failiure to  scale', error);
-      return new Response("Error", { status: 500 });
+    if(stock_data){
+        const message = stock_data[0].messages[0].message;
+        
+        let id = message.id;
+        let sectype = message.sectype;
+        let last = message.last;
+        let time = message.time;
+        let date = message.date;
+        let queue_name = streamName(id);
+        try {
+            await client.xAdd(queue_name, '*',{
+            id: id,
+            sectype: sectype,
+            last: last,
+            time: time,
+            date: date
+        });
+        } catch (error) {
+            console.error('failiure to  scale', error);
+        }
+        stock_data = null;
     }
-  };
-
-// url mapping
-const urlMapping = [
-    {
-      method: "POST",
-      pattern: new URLPattern({ pathname: "/" }),
-      fn: test,
-    }
-];
-
-// server handling
-const handleRequest = async (request) => {
-    const mapping = urlMapping.find(
-      (um) => um.method === request.method && um.pattern.test(request.url)
-    );
-  
-    if (!mapping) {
-      return new Response("Not found", { status: 404 });
-    }
-  
-    const mappingResult = mapping.pattern.exec(request.url);
-    try {
-      return await mapping.fn(request, mappingResult);
-    } catch (e) {
-      console.log(e);
-      return new Response(e.stack, { status: 500 })
-    }
-};
-  
-const portConfig = { port: 7777, hostname: "0.0.0.0" };
-serve(handleRequest, portConfig);
-  
+}

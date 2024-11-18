@@ -16,6 +16,7 @@ def publisher_run_redis(queue: Queue) -> None:
         redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
         stream_name = STREAM_NAME
         redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
+        redis_client.xgroup_create("ingress", "managers", "$", mkstream=True)
 
         while True:
             if queue.not_empty:
