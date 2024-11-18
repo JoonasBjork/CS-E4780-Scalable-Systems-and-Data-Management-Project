@@ -40,6 +40,7 @@ def publisher_run_redis(queue: Queue) -> None:
     
 def publisher_run_http(queue: Queue) -> None:
     """ The publisher will emit event through http requests"""
+    iter = 0
     try:
         print("[PUBLISHER] Publisher for http started")
 
@@ -58,9 +59,9 @@ def publisher_run_http(queue: Queue) -> None:
             data_time = item['time']
 
             # Wait until the current time matches or exceeds the desired time
-            while current_time < data_time:
-                time.sleep(0.1)  # Sleep for a second before checking again
-                current_time = datetime.now().strftime('%H:%M:%S.%f')
+            # while current_time < data_time:
+            #     time.sleep(0.1)  # Sleep for a second before checking again
+            #     current_time = datetime.now().strftime('%H:%M:%S.%f')
                 # print(f"[PUBLISHER] next event at: {data_time}")
                 # print(f"[PUBLISHER] current row: {item}")
             
@@ -70,6 +71,12 @@ def publisher_run_http(queue: Queue) -> None:
             # print(f"TRYING TO POST TO {url}, with item {item}")
             try:
                 requests.post(url, data=item) 
+                # print("publisher has sent:", iter)
+                # iter += 1
+                qsize = queue.qsize()
+                if qsize > 500:
+                    print("The publisher is getting overwhelmed with too many items in queue: ", qsize)
+                # print("Publisher queue size: ", queue.qsize())
             except Exception as e:
                 # Initially the deno manager may be slow at starting up. Therefore, we need to wait for a second before it can receive data. 
                 print(f"Publisher tried posting to {url}, Got exception {e}")

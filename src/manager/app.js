@@ -31,12 +31,16 @@ const streamName = (str) => {
     return `s${id_number}`;
 };
 
+// let iter = 0;
 // function of url map
 const test = async (request) => {
     const bodyText = await request.text();
     const params = new URLSearchParams(bodyText);
     const body = Object.fromEntries(params);
-    // console.log(body);
+
+    // console.log("Manager Iter:", iter);
+    // iter += 1;
+
     let id = body.id;
     let sectype = body.sectype;
     let last = body.last;

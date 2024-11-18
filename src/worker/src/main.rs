@@ -78,9 +78,9 @@ fn main() -> Result<(), RedisError> {
 
                             if record_object.is_ok() {
                                 // All of the fields have been defined
-                                println!("Got ok DataRecord: {}", record_object);
+                                // println!("Got ok DataRecord: {}", record_object);
 
-                                println!("Producer taking read_lock");
+                                // println!("Producer taking read_lock");
                                 let read_lock = ema_producer_data.read().unwrap();
 
                                 let opt_lock = read_lock.get(record_object.id.as_ref().unwrap());
@@ -103,7 +103,7 @@ fn main() -> Result<(), RedisError> {
                                     // The read lock must be dropped here, or otherwise the thread will be deadlocked, as the thread will acquire a write_lock next.
                                     drop(read_lock);
 
-                                    println!("Producer taking write_lock");
+                                    // println!("Producer taking write_lock");
                                     let mut write_lock = ema_producer_data.write().unwrap();
 
                                     write_lock.insert(
@@ -118,7 +118,7 @@ fn main() -> Result<(), RedisError> {
                                 }
                             } else {
                                 // All of the fields have not been defined and there is an error. Send the data to the alerts
-                                println!("Got partial DataRecord: {}", record_object);
+                                // println!("Got partial DataRecord: {}", record_object);
 
                                 let (lock, cvar) = &*alert_producer_data;
                                 let mut vec = lock.lock().unwrap();
@@ -163,11 +163,11 @@ fn main() -> Result<(), RedisError> {
 
             // Consume the item
             if let Some(item) = vec.pop() {
-                println!("alert_consumer consumed: {:?}", item);
+                // println!("alert_consumer consumed: {:?}", item);
                 let alert_res = insert_alert(&mut postgres_client, item);
                 match alert_res {
                     Ok(changed_lines) => {
-                        println!("Alert_consumer added {} lines in postgres", changed_lines)
+                        // println!("Alert_consumer added {} lines in postgres", changed_lines)
                     }
                     Err(e) => println!("Alert_consumer got error while adding to postgres: {}", e),
                 }
@@ -187,7 +187,7 @@ fn main() -> Result<(), RedisError> {
         .expect("Ema consumer was not able to connect to Postgres");
 
         thread::sleep(Duration::from_secs(10));
-        println!("Ema consumer taking read_lock");
+        // println!("Ema consumer taking read_lock");
         let read_lock = ema_consumer_data.read().unwrap();
         for (id, mutex) in read_lock.iter() {
             let mut indicator = mutex.lock().unwrap();
@@ -198,7 +198,7 @@ fn main() -> Result<(), RedisError> {
 
             match insert_indicator_res {
                 Ok(changed_lines) => {
-                    println!("EMA consumer added {} lines in postgres", changed_lines)
+                    // println!("EMA consumer added {} lines in postgres", changed_lines)
                 }
                 Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
             }
