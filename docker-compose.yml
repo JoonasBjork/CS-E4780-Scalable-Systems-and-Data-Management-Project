@@ -49,6 +49,7 @@ services:
     depends_on:
       - flyway
       - redis-streams
+      - simulator
     environment:
       - WORKER_COUNT=${WORKER_COUNT}
 
@@ -58,6 +59,5 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - redis-streams
-      - manager
     volumes:
       - ./data/:/data

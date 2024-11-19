@@ -121,9 +121,9 @@ def parser_run(csv_file: str, queue: queue.Queue) -> None:
                 if record[TIME_OFFSET] == '':
                     queue.put(csv_row_to_redis(record, None))
                     continue
-                
-                record_timestamp = parse_time(record[TIME_OFFSET])
 
+                record_timestamp = parse_time(record[TIME_OFFSET])
+                print(record_timestamp)
                 while datetime.now() < record_timestamp:
                     # Wait until the current time is larger than the record's timestamp
                     time.sleep(0.1)
