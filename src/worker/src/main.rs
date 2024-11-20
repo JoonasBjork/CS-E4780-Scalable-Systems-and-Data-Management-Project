@@ -66,8 +66,7 @@ fn main() -> Result<(), RedisError> {
             iter += 1;
             let read_result: RedisResult<StreamReadReply> =
                 redis_con.xread_options(&[&stream_key], &[latest_id.clone()], &redis_options); // Use latest_id
-            let del_result: RedisResult<StreamReadReply> =
-                redis_con.xdel(&[&stream_key], &[latest_id.clone()]);
+            
 
             match read_result {
                 Ok(messages) => {
@@ -76,6 +75,9 @@ fn main() -> Result<(), RedisError> {
                         for entry in stream.ids {
                             latest_id = entry.id.clone();
 
+                            let del_result: RedisResult<StreamReadReply> =
+                                redis_con.xdel(&[&stream_key], &[latest_id.clone()]);
+                            
                             let record_object = DataEntry::from_redis_map(&entry.map);
 
                             if record_object.is_ok() {
