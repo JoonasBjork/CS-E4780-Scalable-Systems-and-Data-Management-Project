@@ -33,11 +33,13 @@ fn main() -> Result<(), RedisError> {
 
     let stream_key = format!("s{}", replica_index);
 
+    println!("stream_key {}", stream_key);
+
     // ********** Opening a Redis Client connection **********
 
     let redis_client = redis::Client::open("redis://redis-streams:6379/")?;
     let mut redis_con = redis_client.get_connection()?;
-    let redis_options = StreamReadOptions::default().block(5000);
+    let redis_options = StreamReadOptions::default().block(5000).count(50);
 
     let mut latest_id: String = "0".to_string();
 
@@ -56,25 +58,41 @@ fn main() -> Result<(), RedisError> {
     let ema_producer_data = Arc::clone(&ema_data);
 
     let producer = thread::spawn(move || {
-        let mut iter: i32 = 0;
+        let mut total_messages: i32 = 0;
+        // let mut iter: i32 = 0;
         loop {
             // Retrieve messages from the Redis stream starting from the last ID
-            println!(
-                "Reading values from stream {}, iter {}, latest_id {}",
-                &stream_key, iter, latest_id
-            );
-            iter += 1;
+
             let read_result: RedisResult<StreamReadReply> =
                 redis_con.xread_options(&[&stream_key], &[latest_id.clone()], &redis_options); // Use latest_id
-            let del_result: RedisResult<StreamReadReply> =
-                redis_con.xdel(&[&stream_key], &[latest_id.clone()]);
+            let del_result: RedisResult<i32> = redis_con.xdel(&[&stream_key], &[latest_id.clone()]);
 
+            if read_result.is_err() {
+                println!("READ RESULT IS AN ERROR {:?}", read_result);
+            }
+            if del_result.is_err() {
+                println!("DEL RESULT IS AN ERROR {:?}", del_result);
+            }
             match read_result {
                 Ok(messages) => {
+                    if messages.keys.is_empty() {
+                        println!("GOT EMPTY MESSAGES KEYS");
+                    }
                     // println!("Received messages: {:?}", messages);
                     for stream in messages.keys {
                         for entry in stream.ids {
                             latest_id = entry.id.clone();
+                            total_messages += 1;
+                            if total_messages % 1000 == 0 {
+                                println!("I have read {} messages", total_messages);
+                            }
+
+                            if total_messages > 4000 && total_messages % 10 == 0 {
+                                println!(
+                                    "Reading values from stream {}, total_messages {}, latest_id {}",
+                                    &stream_key, total_messages, latest_id
+                                );
+                            }
 
                             let record_object = DataEntry::from_redis_map(&entry.map);
 
@@ -168,10 +186,10 @@ fn main() -> Result<(), RedisError> {
                 // println!("alert_consumer consumed: {:?}", item);
                 let alert_res = insert_alert(&mut postgres_client, item);
                 match alert_res {
-                    Ok(changed_lines) => {
+                    Ok(_) => {
                         // println!("Alert_consumer added {} lines in postgres", changed_lines)
                     }
-                    Err(e) => println!("Alert_consumer got error while adding to postgres: {}", e),
+                    Err(_) => {} //println!("Alert_consumer got error while adding to postgres: {}", e),
                 }
             }
         }
@@ -199,10 +217,10 @@ fn main() -> Result<(), RedisError> {
             let insert_indicator_res = insert_indicator(&mut postgres_client, id, indicator_ref);
 
             match insert_indicator_res {
-                Ok(changed_lines) => {
+                Ok(_) => {
                     // println!("EMA consumer added {} lines in postgres", changed_lines)
                 }
-                Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
+                Err(_) => {} //println!("Ema consumer got error while adding to postgres: {}", e),
             }
         }
     });

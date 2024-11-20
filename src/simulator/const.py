@@ -7,11 +7,13 @@ TIME_OFFSET = 23
 
 REDIS_HOST = 'redis-streams'
 REDIS_PORT = 6379
-STREAM_NAME = 'ingress'
+STREAM_NAME = 's1'
 
 MANAGER_URL = 'http://manager:7777'
 
 import os 
+
+WORKER_COUNT = int(os.environ["WORKER_COUNT"])
 
 devlocal = os.environ.get('DEVLOCAL')
 if devlocal is not None and devlocal.lower() in ['1', 'true', 'yes']:

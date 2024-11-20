@@ -44,7 +44,7 @@ while(1){
         count: 1,
         block: 0
     });
-    if (iter % 100 == 0) {
+    if (iter % 1000 == 0) {
         console.log("Manager iter:", iter)
     }
     iter += 1

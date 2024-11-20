@@ -9,5 +9,5 @@ docker exec redis redis-cli XINFO STREAM s1
 
 echo 
 echo
-echo "STREAM s1"
+echo "STREAM s2"
 docker exec redis redis-cli XINFO STREAM s2

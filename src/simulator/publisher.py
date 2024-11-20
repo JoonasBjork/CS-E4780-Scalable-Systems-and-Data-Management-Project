@@ -3,8 +3,24 @@ import redis
 from datetime import datetime
 import time
 import requests
+import os
 
 from const import *
+
+# Logic moved from javascript to here
+def string_to_number(string):
+    """
+    Convert a string into a numerical sum of its character ASCII values.
+    """
+    return sum(ord(char) for char in string)
+
+def stream_name(string):
+    """
+    Generate a stream name based on the input string and worker count.
+    """
+    id_number = string_to_number(string) % WORKER_COUNT + 1
+    return f"s{id_number}"
+
 
 def publisher_run_redis(queue: Queue) -> None:
     """ The publisher will emit event through redis stream"""
@@ -16,12 +32,12 @@ def publisher_run_redis(queue: Queue) -> None:
         # Initialize the redis client parameter
         # TODO: Please change the parameter here if necessary
         redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
-        stream_name = STREAM_NAME
-        redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
-        try:
-            redis_client.xgroup_create("ingress", "managers", "$", mkstream=True)
-        except Exception as e:
-            print(e)
+        # stream_name = STREAM_NAME
+        # redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
+        # try:
+        #     redis_client.xgroup_create("s1", "managers", "$", mkstream=True)
+        # except Exception as e:
+        #     print(e)
         while True:
             # if queue.not_empty:
             item = queue.get()
@@ -37,13 +53,15 @@ def publisher_run_redis(queue: Queue) -> None:
             #     current_time = datetime.now().strftime('%H:%M:%S.%f')
             # print(f"[PUBLISHER] next event at: {data_time}")
             # print(f"[PUBLISHER] current row: {item}")
+            
 
-            if iter % 100 == 0:
+            if iter % 1000 == 0:
                 print("[PUBLISHER] iter:", iter)
+                # print("publishing item", item, "to stream", stream_name(item["id"]))
             iter += 1
                 
 
-            redis_client.xadd(stream_name, item)
+            redis_client.xadd(stream_name(item["id"]), item)
     except KeyboardInterrupt:
         return
     

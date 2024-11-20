@@ -44,20 +44,20 @@ services:
     env_file:
       - src/project.env
 
-  manager:
-    build:
-      context: ./src/manager
-      dockerfile: Dockerfile
-    image: manager
-    restart: "no"
-    volumes:
-      - ./src/manager/:/app
-    depends_on:
-      - flyway
-      - redis-streams
-      - simulator
-    environment:
-      - WORKER_COUNT=${WORKER_COUNT}
+  # manager:
+  #   build:
+  #     context: ./src/manager
+  #     dockerfile: Dockerfile
+  #   image: manager
+  #   restart: "no"
+  #   volumes:
+  #     - ./src/manager/:/app
+  #   depends_on:
+  #     - flyway
+  #     - redis-streams
+  #     - simulator
+  #   environment:
+  #     - WORKER_COUNT=${WORKER_COUNT}
 
   simulator:
     build:
@@ -68,3 +68,5 @@ services:
       - flyway  # Not necessary, but we want the flyway to start first
     volumes:
       - ./data/:/data
+    environment:
+      - WORKER_COUNT=${WORKER_COUNT}
