@@ -58,6 +58,8 @@ services:
       - simulator
     environment:
       - WORKER_COUNT=${WORKER_COUNT}
+    deploy:
+      replicas: ${MANAGER_COUNT} 
 
   simulator:
     build:

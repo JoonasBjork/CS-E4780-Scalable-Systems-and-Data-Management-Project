@@ -1,6 +1,8 @@
 import { createClient } from "npm:redis@4.6.4";
 import { serve } from "./deps.js";
 
+//manager id
+const MANAGER_ID = crypto.randomUUID();
 // the number of workers
 const workerCount = Deno.env.get("WORKER_COUNT");
 // console.log(workerCount)
@@ -43,7 +45,7 @@ while(1){
     try {
         stock_data = await client.xReadGroup(
             'managers',
-            "manager1",
+            MANAGER_ID,
         {
             key: 'ingress',
             id: '>'
