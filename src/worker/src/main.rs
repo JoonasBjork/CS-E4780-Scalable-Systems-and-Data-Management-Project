@@ -64,10 +64,12 @@ fn main() -> Result<(), RedisError> {
                 &stream_key, iter, latest_id
             );
             iter += 1;
-            let result: RedisResult<StreamReadReply> =
+            let read_result: RedisResult<StreamReadReply> =
                 redis_con.xread_options(&[&stream_key], &[latest_id.clone()], &redis_options); // Use latest_id
+            let del_result: RedisResult<StreamReadReply> =
+                redis_con.xdel(&[&stream_key], &[latest_id.clone()]);
 
-            match result {
+            match read_result {
                 Ok(messages) => {
                     // println!("Received messages: {:?}", messages);
                     for stream in messages.keys {

@@ -9,6 +9,8 @@ services:
       - ./src/ingress-redis-streams/data:/data
       - ./src/ingress-redis-streams/redis.conf:/usr/local/etc/redis/redis.conf
     entrypoint: redis-server /usr/local/etc/redis/redis.conf
+    depends_on:
+      - flyway # Not necessary, but we want the flyway to start first
 
   worker:
     build:
@@ -20,6 +22,10 @@ services:
       - flyway
     deploy:
       replicas: ${WORKER_COUNT} # Retrieved automtaically from .env file
+      resources:
+        reservations:
+          cpus: '1'
+          memory: 256M
 
   database:
     container_name: database-server-dab-p2-cad31c90-8310-42b6-97cd-efa824f683ba
@@ -59,5 +65,6 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - redis-streams
+      - flyway  # Not necessary, but we want the flyway to start first
     volumes:
       - ./data/:/data

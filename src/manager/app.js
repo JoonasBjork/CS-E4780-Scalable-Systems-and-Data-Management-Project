@@ -31,6 +31,8 @@ const streamName = (str) => {
     return `s${id_number}`;
 };
 
+let iter = 0
+
 while(1){
     let stock_data = await client.xReadGroup(
         'managers',
@@ -42,6 +44,10 @@ while(1){
         count: 1,
         block: 0
     });
+    if (iter % 100 == 0) {
+        console.log("Manager iter:", iter)
+    }
+    iter += 1
     if(stock_data){
         for (let i = 0; i < stock_data[0].messages.length; i++) {
             const message = stock_data[0].messages[i].message;
