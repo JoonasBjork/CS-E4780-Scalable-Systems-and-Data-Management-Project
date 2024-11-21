@@ -97,7 +97,7 @@ fn main() -> Result<(), RedisError> {
             match read_result {
                 Ok(messages) => {
                     // println!("Received messages: {:?}", messages);
-                    for stream in messages.keys {
+                    for stream in messages.keys.clone() {
                         for entry in stream.ids {
                             latest_id = entry.id.clone();
 
@@ -109,14 +109,6 @@ fn main() -> Result<(), RedisError> {
                             }
 
                             iter += 1;
-
-                            let del_result: RedisResult<i32> =
-                                redis_con.xdel(&[&stream_key], &[latest_id.clone()]);
-
-                            match del_result {
-                                Ok(_) => {}
-                                Err(e) => println!("ERROR IN del_result: {}", e),
-                            }
 
                             let record_object = DataEntry::from_redis_map(&entry.map);
 
@@ -176,6 +168,20 @@ fn main() -> Result<(), RedisError> {
                                 // println!("DEBUG WORKER ALERT PRODUCER DROPPING LOCK");
                             }
                         }
+                    }
+
+                    // Remove messages that were read from redis
+                    let read_ids = messages
+                        .keys
+                        .into_iter()
+                        .flat_map(|x| x.ids.into_iter().map(|y| y.id))
+                        .collect::<Vec<String>>();
+
+                    let xdel_result: RedisResult<i32> = redis_con.xdel(&[&stream_key], &[read_ids]);
+
+                    match xdel_result {
+                        Ok(_) => {}
+                        Err(e) => println!("ERROR IN del_result: {}", e),
                     }
                 }
                 Err(e) => {
