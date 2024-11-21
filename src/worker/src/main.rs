@@ -3,18 +3,17 @@ mod postgres_connector;
 mod quantitative_indicators;
 
 use postgres_connector::{
-    create_postgres_client, insert_alert, insert_indicator, wait_for_migration,
+    create_postgres_client, insert_alert, insert_indicators, wait_for_migration,
 };
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{Commands, RedisError, RedisResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex, RwLock};
-use std::thread;
 use std::time::Duration;
-use std::{env, process};
+use std::{env, process, thread};
 
 use data_entry::DataEntry;
-use quantitative_indicators::{QuantitativeIndicator, TimestampedValue};
+use quantitative_indicators::QuantitativeIndicator;
 
 fn main() -> Result<(), RedisError> {
     // ********** Setting up the chosen stream **********
@@ -138,11 +137,10 @@ fn main() -> Result<(), RedisError> {
                                     let mut quantitative_indicator =
                                         quant_indicator_lock.lock().unwrap();
 
-                                    quantitative_indicator.most_recent_value =
-                                        Some(TimestampedValue::new(
-                                            record_object.last.unwrap(),
-                                            record_object.timestamp.unwrap(),
-                                        ));
+                                    quantitative_indicator.most_recent_value = Some((
+                                        record_object.last.unwrap(),
+                                        record_object.timestamp.unwrap(),
+                                    ));
                                     // println!("DEBUG WORKER PRODUCER DROPPING READ LOCK");
                                 } else {
                                     // Create the quantitativeIndicator Object and add it to the ema_producer_data
@@ -156,12 +154,10 @@ fn main() -> Result<(), RedisError> {
 
                                     write_lock.insert(
                                         record_object.id.as_ref().unwrap().clone(),
-                                        Mutex::new(QuantitativeIndicator::new(Some(
-                                            TimestampedValue::new(
-                                                record_object.last.unwrap(),
-                                                record_object.timestamp.unwrap(),
-                                            ),
-                                        ))),
+                                        Mutex::new(QuantitativeIndicator::new(Some((
+                                            record_object.last.unwrap(),
+                                            record_object.timestamp.unwrap(),
+                                        )))),
                                     );
                                     // println!("DEBUG WORKER PRODUCER DROPPING WRITE LOCK")
                                 }
@@ -234,7 +230,7 @@ fn main() -> Result<(), RedisError> {
     // ********** Ema consumer thread **********
 
     let ema_consumer_data = Arc::clone(&ema_data);
-    let ema_consumer: thread::JoinHandle<_> = thread::spawn(move || loop {
+    let ema_consumer: thread::JoinHandle<_> = thread::spawn(move || {
         let mut postgres_client = create_postgres_client(
             "postgres://username:password@database:5432/database".to_string(),
             3,
@@ -242,26 +238,27 @@ fn main() -> Result<(), RedisError> {
         )
         .expect("Ema consumer was not able to connect to Postgres");
 
-        // println!("DEBUG WORKER EMA_CONSUMER TAKING READ LOCK");
-        let mut quant_indicators: Vec<(String, QuantitativeIndicator)> = Vec::new();
+        loop {
+            thread::sleep(Duration::new(10, 0));
+            // println!("DEBUG WORKER EMA_CONSUMER TAKING READ LOCK");
+            let mut quant_indicators: Vec<(String, QuantitativeIndicator)> = Vec::new();
 
-        let read_lock = ema_consumer_data.read().unwrap();
+            let read_lock = ema_consumer_data.read().unwrap();
 
-        for (id, mutex) in read_lock.iter() {
-            let mut indicator_ref = mutex.lock().unwrap();
-            indicator_ref.calculate_both_emas();
-            // let indicator: &QuantitativeIndicator = &*indicator_ref;
-            quant_indicators.push((id.clone(), (*indicator_ref).clone()));
-        }
+            for (id, mutex) in read_lock.iter() {
+                let mut indicator_ref = mutex.lock().unwrap();
+                indicator_ref.calculate_both_emas();
+                // let indicator: &QuantitativeIndicator = &*indicator_ref;
+                quant_indicators.push((id.clone(), (*indicator_ref).clone()));
+            }
 
-        // println!("DEBUG WORKER EMA_CONSUMER DROPPING READ LOCK");
-        drop(read_lock);
+            // println!("DEBUG WORKER EMA_CONSUMER DROPPING READ LOCK");
+            drop(read_lock);
 
-        for (id, qi) in quant_indicators {
-            let insert_indicator_res = insert_indicator(&mut postgres_client, &id, &qi);
-            match insert_indicator_res {
-                Ok(_) => {
-                    // println!("EMA consumer added {} lines in postgres", changed_lines)
+            let insert_indicators_res = insert_indicators(&mut postgres_client, &quant_indicators);
+            match insert_indicators_res {
+                Ok(changed_lines) => {
+                    println!("EMA consumer added {} lines in postgres", changed_lines)
                 }
                 Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
             }
