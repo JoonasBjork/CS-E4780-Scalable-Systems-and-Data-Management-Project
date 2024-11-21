@@ -44,9 +44,11 @@ fn timestamp_from_value(otime: Option<&Value>, odate: Option<&Value>) -> Option<
     let stime = string_from_value(otime);
     let sdate = string_from_value(odate);
 
+    // println!("stime: {:?}, sdate: {:?}", stime, sdate);
+
     if let (Some(time), Some(date)) = (stime, sdate) {
         let timestamp_str = format!("{} {}", date, time);
-        let format = "%d-%m-%Y %H:%M:%S:%f";
+        let format = "%d-%m-%Y %H:%M:%S.%f";
 
         match NaiveDateTime::parse_from_str(&timestamp_str, format) {
             Ok(datetime) => Some(datetime),
@@ -81,6 +83,7 @@ impl DataEntry {
     }
 
     pub fn is_ok(&self) -> bool {
+        // println!("self.id.is_some() {}, self.sectype.is_some() {}, self.last.is_some() {}, self.timestamp.is_some() {}", self.id.is_some(), self.sectype.is_some(), self.last.is_some(), self.timestamp.is_some());
         self.id.is_some()
             && self.sectype.is_some()
             && self.last.is_some()

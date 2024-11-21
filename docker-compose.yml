@@ -66,7 +66,10 @@ services:
       context: ./src/simulator
       dockerfile: Dockerfile
     depends_on:
-      - redis-streams
-      - flyway  # Not necessary, but we want the flyway to start first
+      redis-streams:
+        condition: service_started
+      flyway:  # Not necessary, but we want the flyway to start first
+        condition: service_completed_successfully
+
     volumes:
       - ./data/:/data

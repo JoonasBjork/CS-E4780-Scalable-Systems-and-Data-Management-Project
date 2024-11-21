@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TimestampedValue {
     pub value: f64,
     pub timestamp: NaiveDateTime,
@@ -27,6 +27,7 @@ impl fmt::Display for TimestampedValue {
     }
 }
 
+#[derive(Clone)]
 pub struct QuantitativeIndicator {
     pub ema_38: f64,
     pub prev_ema_38: f64,

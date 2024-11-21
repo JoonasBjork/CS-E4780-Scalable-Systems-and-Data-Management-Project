@@ -64,3 +64,60 @@ pub fn insert_indicator(
         ],
     )
 }
+
+pub fn wait_for_migration(
+    client: &mut Client,
+    table_names: &[&str],
+    retries: u64,
+    wait_time_in_seconds: u64,
+) -> Result<(), ()> {
+    let mut already_tried: u64 = 0;
+
+    let query = "SELECT tablename
+                 FROM pg_catalog.pg_tables
+                 WHERE schemaname = 'public'
+                 AND tablename = ANY($1);";
+
+    loop {
+        let res: Result<Vec<postgres::Row>, Error> = client.query(query, &[&table_names]);
+
+        match res {
+            Ok(rows) => {
+                let db_table_names: Vec<String> = rows
+                    .iter()
+                    .map(|row| row.get::<_, String>("tablename"))
+                    .collect();
+
+                let all_tables_present = table_names
+                    .iter()
+                    .all(|&table_name| db_table_names.contains(&table_name.to_string()));
+
+                if all_tables_present {
+                    println!("All tables are present!");
+                    return Ok(());
+                } else {
+                    println!(
+                            "Postgre missing tables: {:?}",
+                            table_names
+                                .iter()
+                                .filter(|&&table_name| !db_table_names.contains(&table_name.to_string()))
+                                .collect::<Vec<&&str>>()
+                        );
+                }
+            }
+            Err(_) => {
+                println!("Got error when querying psql tables");
+            }
+        }
+
+        if already_tried >= retries {
+            return Err(());
+        }
+        println!(
+            "Retrying to check if psql migration has been succesful {}",
+            wait_time_in_seconds
+        );
+        already_tried += 1;
+        thread::sleep(Duration::from_secs(wait_time_in_seconds));
+    }
+}
