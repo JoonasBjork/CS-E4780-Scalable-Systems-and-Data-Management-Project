@@ -3,7 +3,7 @@ mod postgres_connector;
 mod quantitative_indicators;
 
 use postgres_connector::{
-    create_postgres_client, insert_alert, insert_indicators, wait_for_migration,
+    create_postgres_client, insert_alerts, insert_indicators, wait_for_migration,
 };
 use redis::streams::{StreamReadOptions, StreamReadReply};
 use redis::{Commands, RedisError, RedisResult};
@@ -198,10 +198,11 @@ fn main() -> Result<(), RedisError> {
         .expect("Alert consumer was not able to connect to Postgres");
 
         loop {
+            thread::sleep(Duration::new(1, 0));
             let (lock, cvar) = &*alert_consumer_data;
 
             // Lock the mutex and wait for a notification
-            println!("DEBUG WORKER ALERT_CONSUMER TAKING LOCK");
+            // println!("DEBUG WORKER ALERT_CONSUMER TAKING LOCK");
             let mut vec = lock.lock().unwrap();
             while vec.is_empty() {
                 // Wait until the condition variable is notified
@@ -211,17 +212,19 @@ fn main() -> Result<(), RedisError> {
             let entry_vec: Vec<DataEntry> = vec.drain(..).collect();
 
             // Release the lock
-            println!("DEBUG WORKER ALERT_CONSUMER DROPPING LOCK");
+            // println!("DEBUG WORKER ALERT_CONSUMER DROPPING LOCK");
             drop(vec);
-            for entry in entry_vec {
-                let alert_res = insert_alert(&mut postgres_client, entry);
-                match alert_res {
-                    Ok(_) => {
-                        // println!("Alert_consumer added {} lines in postgres", changed_lines)
-                    }
-                    Err(e) => {
-                        println!("Alert_consumer got error while adding to postgres: {}", e)
-                    }
+
+            let alert_res = insert_alerts(&mut postgres_client, &entry_vec);
+            match alert_res {
+                Ok(changed_lines) => {
+                    println!(
+                        "Alert_consumer added {} lines to postgre alerts",
+                        changed_lines
+                    )
+                }
+                Err(e) => {
+                    println!("Alert_consumer got error while adding to postgres: {}", e)
                 }
             }
         }
@@ -258,7 +261,10 @@ fn main() -> Result<(), RedisError> {
             let insert_indicators_res = insert_indicators(&mut postgres_client, &quant_indicators);
             match insert_indicators_res {
                 Ok(changed_lines) => {
-                    println!("EMA consumer added {} lines in postgres", changed_lines)
+                    println!(
+                        "EMA consumer added {} lines to postgre indicators",
+                        changed_lines
+                    )
                 }
                 Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
             }

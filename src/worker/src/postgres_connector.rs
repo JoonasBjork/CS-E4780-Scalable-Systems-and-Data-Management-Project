@@ -28,18 +28,34 @@ pub fn create_postgres_client(
     return client_connection;
 }
 
-pub fn insert_alert(client: &mut Client, dataentry: DataEntry) -> Result<u64, Error> {
-    let query =
-        "INSERT INTO alerts (symbol, sectype, last, trading_timestamp) VALUES ($1, $2, $3, $4)";
-    client.execute(
-        query,
-        &[
-            &dataentry.id,
-            &dataentry.sectype,
-            &dataentry.last,
-            &dataentry.timestamp,
-        ],
-    )
+pub fn insert_alerts(client: &mut Client, dataentries: &[DataEntry]) -> Result<u64, Error> {
+    let mut query =
+        String::from("INSERT INTO alerts (symbol, sectype, last, trading_timestamp) VALUES ");
+
+    let mut params: Vec<&(dyn postgres::types::ToSql + Sync)> = Vec::new();
+
+    let mut query_idx = 1;
+    for (i, dataentry) in dataentries.iter().enumerate() {
+        if i > 0 {
+            query.push_str(", ");
+        }
+
+        query.push_str(&format!(
+            "(${}, ${}, ${}, ${})",
+            query_idx,
+            query_idx + 1,
+            query_idx + 2,
+            query_idx + 3
+        ));
+        query_idx += 4;
+
+        params.push(&dataentry.id);
+        params.push(&dataentry.sectype);
+        params.push(&dataentry.last);
+        params.push(&dataentry.timestamp);
+    }
+
+    client.execute(&query, &params)
 }
 
 pub fn insert_indicators(
