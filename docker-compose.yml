@@ -17,9 +17,12 @@ services:
       context: ./src/worker
       dockerfile: Dockerfile
     depends_on:
-      - redis-streams
-      - database
-      - flyway
+      redis-streams:
+        condition: service_started
+      database:
+        condition: service_started
+      flyway:  # Not necessary, but we want the flyway to start first
+        condition: service_completed_successfully
     deploy:
       replicas: ${WORKER_COUNT} # Retrieved automtaically from .env file
       resources:
@@ -70,6 +73,5 @@ services:
         condition: service_started
       flyway:  # Not necessary, but we want the flyway to start first
         condition: service_completed_successfully
-
     volumes:
       - ./data/:/data
