@@ -88,3 +88,5 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./data/:/data
+    deploy:
+      replicas: ${SIMULATOR_COUNT}
