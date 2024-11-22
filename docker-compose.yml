@@ -64,3 +64,22 @@ services:
       - redis-streams
     volumes:
       - ./data/:/data
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    restart: on-failure
+    ports:
+      - 9999:3000
+    env_file:
+      - src/project.env
+    depends_on:
+      - database
+      - flyway
+    volumes:
+      # - ./src/dashboard/provisioning/dashboards:/usr/share/grafana/conf/provisioning/dashboards
+      # - ./src/dashboard/provisioning/datasources:/usr/share/grafana/conf/provisioning/datasources
+      - ./src/dashboard/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./src/dashboard/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./src/dashboard/grafana.ini:/etc/grafana/grafana.ini
+

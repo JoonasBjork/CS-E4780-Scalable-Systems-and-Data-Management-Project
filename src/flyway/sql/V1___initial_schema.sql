@@ -17,3 +17,4 @@ CREATE TABLE indicators (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (symbol, created_at)
 );
+
