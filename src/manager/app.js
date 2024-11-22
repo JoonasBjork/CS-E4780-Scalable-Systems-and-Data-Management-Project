@@ -51,7 +51,7 @@ while(1){
             id: '>'
         }, {
             count: 1,
-            block: 0
+            block: 5000
         });
     }
     catch(error) {
@@ -66,23 +66,32 @@ while(1){
             id: '>'
         }, {
             count: 1,
-            block: 0
+            block: 5000
         });
     }
     // if (iter % 100 == 0) {
     //     console.log("Manager iter:", iter)
     // }
     iter += 1
+    let message;
+    let message_id;
+    let id;
+    let sectype;
+    let last;
+    let time;
+    let date;
+    let queue_name;
+
     if(stock_data){
         for (let i = 0; i < stock_data[0].messages.length; i++) {
-            const message = stock_data[0].messages[i].message;
-            let message_id = stock_data[0].messages[i].id;
-            let id = message.id;
-            let sectype = message.sectype;
-            let last = message.last;
-            let time = message.time;
-            let date = message.date;
-            let queue_name = streamName(id);
+            message = stock_data[0].messages[i].message;
+            message_id = stock_data[0].messages[i].id;
+            id = message.id;
+            sectype = message.sectype;
+            last = message.last;
+            time = message.time;
+            date = message.date;
+            queue_name = streamName(id);
             try {
                 await client.xAdd(queue_name, '*',{
                     id: id,
