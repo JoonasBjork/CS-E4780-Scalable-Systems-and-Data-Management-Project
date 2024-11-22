@@ -40,6 +40,15 @@ const streamName = (str) => {
 
 let iter = 0
 
+let message;
+let message_id;
+let id;
+let sectype;
+let last;
+let time;
+let date;
+let queue_name;
+
 while(1){
     let stock_data
     try {
@@ -60,7 +69,7 @@ while(1){
         });
         stock_data = await client.xReadGroup(
             'managers',
-            "manager1",
+            MANAGER_ID,
         {
             key: 'ingress',
             id: '>'
@@ -73,14 +82,6 @@ while(1){
     //     console.log("Manager iter:", iter)
     // }
     iter += 1
-    let message;
-    let message_id;
-    let id;
-    let sectype;
-    let last;
-    let time;
-    let date;
-    let queue_name;
 
     if(stock_data){
         for (let i = 0; i < stock_data[0].messages.length; i++) {
