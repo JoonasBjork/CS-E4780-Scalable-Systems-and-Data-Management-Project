@@ -1,7 +1,5 @@
 FROM denoland/deno:alpine-1.31.0
 
-EXPOSE 7777
-
 WORKDIR /app
 
 COPY deps.js .

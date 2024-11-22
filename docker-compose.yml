@@ -9,24 +9,43 @@ services:
       - ./src/ingress-redis-streams/data:/data
       - ./src/ingress-redis-streams/redis.conf:/usr/local/etc/redis/redis.conf
     entrypoint: redis-server /usr/local/etc/redis/redis.conf
+    depends_on:
+      - flyway # Not necessary, but we want the flyway to start first
 
   worker:
     build:
       context: ./src/worker
       dockerfile: Dockerfile
     depends_on:
-      - redis-streams
-      - database
-      - flyway
+      redis-streams:
+        condition: service_started
+      database:
+        condition: service_started
+      flyway:
+        # Not necessary, but we want the flyway to start first
+        condition: service_completed_successfully
     deploy:
       replicas: ${WORKER_COUNT} # Retrieved automtaically from .env file
+      resources:
+        reservations:
+          cpus: '1'
+          memory: 256M
 
   database:
     container_name: database-server-dab-p2-cad31c90-8310-42b6-97cd-efa824f683ba
     image: postgres:14.1
     restart: "no"
-    env_file:
-      - src/project.env
+    environment:
+      # Required to launch the PSQL server
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      # Required to use 'psql' client to connect to the database
+      - PGUSER=${PGUSER}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGHOST=${PGHOST}
+      - PGPORT=${PGPORT}
+      - PGDATABASE=${PGDATABASE}
 
   flyway:
     image: flyway/flyway:9.11.0-alpine
@@ -35,8 +54,10 @@ services:
     volumes:
       - ./src/flyway/sql/:/flyway/sql
     command: -connectRetries=60 -baselineOnMigrate=true migrate
-    env_file:
-      - src/project.env
+    environment:
+      - FLYWAY_USER=${FLYWAY_USER}
+      - FLYWAY_PASSWORD=${FLYWAY_PASSWORD}
+      - FLYWAY_URL=${FLYWAY_URL}
 
   manager:
     build:
@@ -46,24 +67,29 @@ services:
     restart: "no"
     volumes:
       - ./src/manager/:/app
-    expose:
-      - 7777
-    ports:
-      - 7777:7777
     depends_on:
       - flyway
       - redis-streams
+      - simulator
     environment:
       - WORKER_COUNT=${WORKER_COUNT}
+    deploy:
+      replicas: ${MANAGER_COUNT}
 
   simulator:
     build:
       context: ./src/simulator
       dockerfile: Dockerfile
     depends_on:
-      - redis-streams
+      redis-streams:
+        condition: service_started
+      flyway:
+        # Not necessary, but we want the flyway to start first
+        condition: service_completed_successfully
     volumes:
       - ./data/:/data
+    deploy:
+      replicas: ${SIMULATOR_COUNT}
 
   grafana:
     container_name: grafana
