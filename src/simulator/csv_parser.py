@@ -1,9 +1,10 @@
 import queue
 import csv
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Generator, Optional, Dict
 import itertools
+import os
 
 
 from const import *
@@ -86,50 +87,86 @@ def read_from_offset(filename: str, start_offset: int, buffer_size: int = 128) -
 
 def parser_run(csv_file: str, queue: queue.Queue) -> None:
     try:
-        byte_offset = 1000000
-        print("[PARSER] Parser stated")
+    #     byte_offset = 10000 # Skip comments at the beginning of the file
+    #     print("[PARSER] Parser stated")
 
-        shifted_time = 0  # Time corresponding to 00:00 for each cycle
+    #     print("File size:", os.path.getsize(CSV_FILE))
 
-        while True:
-            byte_offset += 1000000
-            # Advance the generator in larger steps so that initial processing is lighter
-            generator = generator = read_from_offset(csv_file, byte_offset)
+    #     shifted_time = 0  # Time corresponding to 00:00 for each cycle
 
-            # Get the first value that corresponds to the current time
-            first_record = next(generator)
-            if (first_record[TIME_OFFSET] and 
-                first_record[PRICE_OFFSET] and 
-                parse_time(first_record[TIME_OFFSET]) > datetime.now()):
+    #     while True:
+    #         # Advance the generator in larger steps so that initial processing is lighter
+    #         generator = read_from_offset(csv_file, byte_offset)
+
+    #         # Get the first value that corresponds to the current time
+    #         first_record = next(generator)
+    #         # print("Found first_record:", first_record)
+    #         # print("Byte offset:", byte_offset, "First record:", first_record)
+    #         if not first_record[TIME_OFFSET]:
+    #             print("NO TIMESTAMP")
+    #             byte_offset += 1000
+    #             continue 
+
+    #         if parse_time(first_record[TIME_OFFSET]) > datetime.now() + timedelta(seconds = 20):
+
+    #             # print("Time difference is too large: ", first_record[TIME_OFFSET], datetime.now() + timedelta(seconds = 20))
+    #             print("BACKWARDS", first_record[TIME_OFFSET])
+
+    #             # Start backtracking if you went past too much (keep a 20 second buffer)
+    #             byte_offset -= 10000
+    #             continue
+
+    #         if parse_time(first_record[TIME_OFFSET]) > datetime.now():
                 
-                # print(f'[PARSER] found first event at {first_record[TIME_OFFSET]}')
-                timestamp = parse_time(first_record[TIME_OFFSET])
-                current_time = datetime.now()
-                shifted_time = current_time - timestamp
-                queue.put(csv_row_to_redis(first_record, current_time))
-                break
+    #             # print(f'[PARSER] found first event at {first_record[TIME_OFFSET]}')
+    #             timestamp = parse_time(first_record[TIME_OFFSET])
+    #             current_time = datetime.now()
+    #             shifted_time = current_time - timestamp
+    #             queue.put(csv_row_to_redis(first_record, current_time))
+    #             break
+
+    #         print("FORWARDS", first_record[TIME_OFFSET])
+    #         # print("Increasing byte offset by 1000000")
+    #         byte_offset += 1000000
+
+
+    # Just do this with time shift. Too much hassle
+
+        generator = read_from_offset(csv_file, 100010000)
+        first_record = next(generator)
+        while first_record[TIME_OFFSET] == '':
+            first_record = next(generator)
+            # print("First record:", first_record)
+
+        time_shift = datetime.now() - parse_time(first_record[TIME_OFFSET])
+
 
         print("[PARSER] Starting to add items to queue")
+        print("[PARSER] Current time:", datetime.now() - time_shift, "Time of the first_record", first_record)
 
-        # iter = 0
         try:
             while True:
-                # print("[PARSER] ON ITERATION", iter)
-                # iter += 1
                 record = next(generator)
 
                 if record[TIME_OFFSET] == '':
                     queue.put(csv_row_to_redis(record, None))
                     continue
-                
-                record_timestamp = parse_time(record[TIME_OFFSET])
 
-                while datetime.now() < record_timestamp:
-                    # Wait until the current time is larger than the record's timestamp
-                    time.sleep(0.1)
+                # record_timestamp = 
+                sleep_duration: float = (parse_time(record[TIME_OFFSET]) - (datetime.now() - time_shift)).total_seconds()
+                # print("[PARSER] found sleep duration")
+
+                if sleep_duration > 0.1:
+                    # print("[PARSER] sleeping for", sleep_duration, "On record with timestamp", parse_time(record[TIME_OFFSET]))
+                    time.sleep(sleep_duration)
+                # while datetime.now() - time_shift < record_timestamp:
+                #     # Wait until the current time is larger than the record's timestamp
+                #     print("[PARSER] In infinite loop", datetime.now() - time_shift, record_timestamp)
+                #     time.sleep(0.1)
+                # print("[Parser] out of infinite loop")
 
                 timestamp = parse_time(record[TIME_OFFSET])
-                queue.put(csv_row_to_redis(record, shifted_time + timestamp))
+                queue.put(csv_row_to_redis(record, timestamp))
                 # if record[TIME_OFFSET] and record[PRICE_OFFSET]:
                 #     normal_count += 1
                 # else:

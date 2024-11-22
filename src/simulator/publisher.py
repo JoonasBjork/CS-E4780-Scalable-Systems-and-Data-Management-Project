@@ -11,36 +11,41 @@ def publisher_run_redis(queue: Queue) -> None:
     try:
         print("[PUBLISHER] Publisher started")
 
+        iter = 0
+
         # Initialize the redis client parameter
         # TODO: Please change the parameter here if necessary
         redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
         stream_name = STREAM_NAME
         redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
-
         while True:
-            if queue.not_empty:
-                item = queue.get()
+            # if queue.not_empty:
+            item = queue.get()
+            
+            # current_time = datetime.now().strftime('%H:%M:%S.%f')
+
+            # Convert the time field of data to seconds
+            # data_time = item['time']
+
+            # Wait until the current time matches or exceeds the desired time
+            # while current_time < data_time:
+            #     time.sleep(0.1)  # Sleep for a second before checking again
+            #     current_time = datetime.now().strftime('%H:%M:%S.%f')
+            # print(f"[PUBLISHER] next event at: {data_time}")
+            # print(f"[PUBLISHER] current row: {item}")
+
+            if iter % 100 == 0:
+                print("[PUBLISHER] iter:", iter)
+            iter += 1
                 
-                current_time = datetime.now().strftime('%H:%M:%S.%f')
 
-                # Convert the time field of data to seconds
-                data_time = item['time']
-
-                # Wait until the current time matches or exceeds the desired time
-                while current_time < data_time:
-                    time.sleep(0.1)  # Sleep for a second before checking again
-                    current_time = datetime.now().strftime('%H:%M:%S.%f')
-                    # print(f"[PUBLISHER] next event at: {data_time}")
-                    # print(f"[PUBLISHER] current row: {item}")
-                    
-
-                redis_client.xadd(stream_name, item)
+            redis_client.xadd(stream_name, item)
     except KeyboardInterrupt:
         return
     
 def publisher_run_http(queue: Queue) -> None:
     """ The publisher will emit event through http requests"""
-    iter = 0
+    # iter = 0
     try:
         print("[PUBLISHER] Publisher for http started")
 

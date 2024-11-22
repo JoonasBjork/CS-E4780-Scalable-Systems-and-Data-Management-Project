@@ -1,13 +1,17 @@
-import { serve } from "./deps.js";
 import { createClient } from "npm:redis@4.6.4";
+import { serve } from "./deps.js";
 
+//manager id
+const MANAGER_ID = crypto.randomUUID();
 // the number of workers
 const workerCount = Deno.env.get("WORKER_COUNT");
+// console.log(workerCount)
 // connect to redis
 const client = createClient({
-    url: "redis://redis:6379",
+    url: "redis://redis-streams:6379",
     pingInterval: 1000,
 })
+
 
 try {
     await client.connect();
@@ -22,74 +26,77 @@ const stringToNumber = (str) => {
     for (let i = 0; i < str.length; i++) {
       sum += str.charCodeAt(i);
     }
+    // console.log(sum);
     return sum;
 };
 
 // make to stream name
 const streamName = (str) => {
     let id_number = stringToNumber(str) % workerCount + 1;
+    // console.log(id_number)
+    // console.log(workerCount)
     return `s${id_number}`;
 };
 
-// let iter = 0;
-// function of url map
-const test = async (request) => {
-    const bodyText = await request.text();
-    const params = new URLSearchParams(bodyText);
-    const body = Object.fromEntries(params);
+let iter = 0
 
-    // console.log("Manager Iter:", iter);
-    // iter += 1;
-
-    let id = body.id;
-    let sectype = body.sectype;
-    let last = body.last;
-    let time = body.time;
-    let date = body.date;
-    let queue_name = streamName(body.id);
+while(1){
+    let stock_data
     try {
-      await client.xAdd(queue_name, '*',{
-        id: id,
-        sectype: sectype,
-        last: last,
-        time: time,
-        date: date
-    });
-      return new Response("OK", { status: 200 }); 
-    } catch (error) {
-      console.error('failiure to  scale', error);
-      return new Response("Error", { status: 500 });
+        stock_data = await client.xReadGroup(
+            'managers',
+            MANAGER_ID,
+        {
+            key: 'ingress',
+            id: '>'
+        }, {
+            count: 1,
+            block: 0
+        });
     }
-  };
+    catch(error) {
+        await client.xGroupCreate('ingress', 'managers', '0', {
+            'MKSTREAM': true
+        });
+        stock_data = await client.xReadGroup(
+            'managers',
+            "manager1",
+        {
+            key: 'ingress',
+            id: '>'
+        }, {
+            count: 1,
+            block: 0
+        });
+    }
+    // if (iter % 100 == 0) {
+    //     console.log("Manager iter:", iter)
+    // }
+    iter += 1
+    if(stock_data){
+        for (let i = 0; i < stock_data[0].messages.length; i++) {
+            const message = stock_data[0].messages[i].message;
+            let message_id = stock_data[0].messages[i].id;
+            let id = message.id;
+            let sectype = message.sectype;
+            let last = message.last;
+            let time = message.time;
+            let date = message.date;
+            let queue_name = streamName(id);
+            try {
+                await client.xAdd(queue_name, '*',{
+                    id: id,
+                    sectype: sectype,
+                    last: last,
+                    time: time,
+                    date: date
+                });
+                await client.xDel('ingress', message_id);
+            } catch (error) {
+                console.error('failiure to  scale', error);
+            }
 
-// url mapping
-const urlMapping = [
-    {
-      method: "POST",
-      pattern: new URLPattern({ pathname: "/" }),
-      fn: test,
+        }
+        stock_data = null;
     }
-];
-
-// server handling
-const handleRequest = async (request) => {
-    const mapping = urlMapping.find(
-      (um) => um.method === request.method && um.pattern.test(request.url)
-    );
-  
-    if (!mapping) {
-      return new Response("Not found", { status: 404 });
-    }
-  
-    const mappingResult = mapping.pattern.exec(request.url);
-    try {
-      return await mapping.fn(request, mappingResult);
-    } catch (e) {
-      console.log(e);
-      return new Response(e.stack, { status: 500 })
-    }
-};
-  
-const portConfig = { port: 7777, hostname: "0.0.0.0" };
-serve(handleRequest, portConfig);
-  
+}
