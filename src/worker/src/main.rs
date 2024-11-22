@@ -129,10 +129,10 @@ fn main() -> Result<(), RedisError> {
                                     let mut quantitative_indicator =
                                         quant_indicator_lock.lock().unwrap();
 
-                                    quantitative_indicator.most_recent_value = Some((
-                                        record_object.last.unwrap(),
-                                        record_object.timestamp.unwrap(),
-                                    ));
+                                    quantitative_indicator.update_most_recent_value(
+                                        Some(record_object.last.unwrap()),
+                                        Some(record_object.timestamp.unwrap()),
+                                    );
                                     // println!("DEBUG WORKER PRODUCER DROPPING READ LOCK");
                                 } else {
                                     // Create the quantitativeIndicator Object and add it to the ema_producer_data
@@ -146,10 +146,10 @@ fn main() -> Result<(), RedisError> {
 
                                     write_lock.insert(
                                         record_object.id.as_ref().unwrap().clone(),
-                                        Mutex::new(QuantitativeIndicator::new(Some((
-                                            record_object.last.unwrap(),
-                                            record_object.timestamp.unwrap(),
-                                        )))),
+                                        Mutex::new(QuantitativeIndicator::new(
+                                            Some(record_object.last.unwrap()),
+                                            Some(record_object.timestamp.unwrap()),
+                                        )),
                                     );
                                     // println!("DEBUG WORKER PRODUCER DROPPING WRITE LOCK")
                                 }

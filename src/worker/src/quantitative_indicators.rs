@@ -35,11 +35,15 @@ pub struct QuantitativeIndicator {
     pub prev_ema_100: f64,
     pub bullish: bool,
     pub bearish: bool,
-    pub most_recent_value: Option<(f64, NaiveDateTime)>,
+    most_recent_value: Option<f64>,
+    pub most_recent_value_timestamp: Option<NaiveDateTime>,
 }
 
 impl QuantitativeIndicator {
-    pub fn new(most_recent_value: Option<(f64, NaiveDateTime)>) -> Self {
+    pub fn new(
+        most_recent_value: Option<f64>,
+        most_recent_value_timestamp: Option<NaiveDateTime>,
+    ) -> Self {
         QuantitativeIndicator {
             ema_38: 0.0,
             prev_ema_38: 0.0,
@@ -48,13 +52,23 @@ impl QuantitativeIndicator {
             bullish: false,
             bearish: false,
             most_recent_value: most_recent_value,
+            most_recent_value_timestamp: most_recent_value_timestamp,
         }
+    }
+
+    pub fn update_most_recent_value(
+        &mut self,
+        most_recent_value: Option<f64>,
+        most_recent_value_timestamp: Option<NaiveDateTime>,
+    ) -> () {
+        self.most_recent_value = most_recent_value;
+        self.most_recent_value_timestamp = most_recent_value_timestamp
     }
 
     pub fn calculate_new_ema_38(&mut self) -> f64 {
         // Calculates the new ema_38, updates the prev and new value in the struct, and returns the calculated value
         let j = 38.0;
-        let close = if let Some((value, _)) = self.most_recent_value {
+        let close = if let Some(value) = self.most_recent_value {
             value
         } else {
             0.0
@@ -73,7 +87,7 @@ impl QuantitativeIndicator {
     pub fn calculate_new_ema_100(&mut self) -> f64 {
         // Calculates the new ema_100, updates the prev and new value in the struct, and returns the calculated value
         let j = 100.0;
-        let close = if let Some((value, _)) = self.most_recent_value {
+        let close = if let Some(value) = self.most_recent_value {
             value
         } else {
             0.0
@@ -96,6 +110,7 @@ impl QuantitativeIndicator {
         self.bullish = self.ema_38 > self.ema_100 && self.prev_ema_38 <= self.prev_ema_100;
         self.bearish = self.ema_38 < self.ema_100 && self.prev_ema_38 >= self.prev_ema_100;
         self.most_recent_value = None;
+        self.most_recent_value_timestamp = None;
 
         return (ema_38, ema_100);
     }
@@ -106,8 +121,8 @@ impl fmt::Display for QuantitativeIndicator {
         // Use match to check if each field is Some or None, and format accordingly
         write!(
             f,
-            "ema_38: {:?}, prev_ema_38: {:?}, ema_100: {:?}, prev_ema_100: {:?}, most_recent_value: {:?}",
-            self.ema_38, self.prev_ema_38, self.ema_100, self.prev_ema_100, self.most_recent_value
+            "ema_38: {:?}, prev_ema_38: {:?}, ema_100: {:?}, prev_ema_100: {:?}, most_recent_value: {:?}, most_recent_value_timestamp {:?}",
+            self.ema_38, self.prev_ema_38, self.ema_100, self.prev_ema_100, self.most_recent_value, self.most_recent_value_timestamp
         )
     }
 }

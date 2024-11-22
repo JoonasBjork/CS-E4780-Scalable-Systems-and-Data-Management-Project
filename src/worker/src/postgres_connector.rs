@@ -1,6 +1,7 @@
 use crate::data_entry::DataEntry;
 use crate::quantitative_indicators::QuantitativeIndicator;
 
+use postgres::types::ToSql;
 use postgres::{Client, Error, NoTls};
 use std::thread;
 use std::time::Duration;
@@ -32,7 +33,7 @@ pub fn insert_alerts(client: &mut Client, dataentries: &[DataEntry]) -> Result<u
     let mut query =
         String::from("INSERT INTO alerts (symbol, sectype, last, trading_timestamp) VALUES ");
 
-    let mut params: Vec<&(dyn postgres::types::ToSql + Sync)> = Vec::new();
+    let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
 
     let mut query_idx = 1;
     for (i, dataentry) in dataentries.iter().enumerate() {
@@ -62,13 +63,11 @@ pub fn insert_indicators(
     client: &mut Client,
     indicators: &[(String, QuantitativeIndicator)],
 ) -> Result<u64, Error> {
-    // This is very bad code with the heap allocations but will fix later.
-
     let mut query = String::from(
         "INSERT INTO indicators (symbol, ema_38, ema_100, bullish, bearish, last_trade_timestamp) VALUES "
     );
 
-    let mut params: Vec<Box<dyn postgres::types::ToSql + Sync>> = Vec::new();
+    let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
 
     let mut query_idx = 1;
     for (i, (id, quantitative_indicator)) in indicators.iter().enumerate() {
@@ -86,18 +85,15 @@ pub fn insert_indicators(
         ));
         query_idx += 6;
 
-        params.push(Box::new(id.clone()));
-        params.push(Box::new(quantitative_indicator.ema_38));
-        params.push(Box::new(quantitative_indicator.ema_100));
-        params.push(Box::new(quantitative_indicator.bullish));
-        params.push(Box::new(quantitative_indicator.bearish));
-
-        let last_trade_timestamp = quantitative_indicator.most_recent_value.map(|x| x.1);
-        params.push(Box::new(last_trade_timestamp));
+        params.push(id);
+        params.push(&quantitative_indicator.ema_38);
+        params.push(&quantitative_indicator.ema_100);
+        params.push(&quantitative_indicator.bullish);
+        params.push(&quantitative_indicator.bearish);
+        params.push(&quantitative_indicator.most_recent_value_timestamp);
     }
 
-    let params_refs: Vec<&(dyn postgres::types::ToSql + Sync)> =
-        params.iter().map(|b| &**b).collect();
+    let params_refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|b| &**b).collect();
 
     client.execute(&query, &params_refs).map_err(|e| e.into())
 }
