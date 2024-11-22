@@ -100,12 +100,13 @@ services:
     env_file:
       - src/project.env
     depends_on:
-      - database
-      - flyway
+      database:
+        condition: service_started
+      flyway:
+        condition: service_completed_successfully
     volumes:
       # - ./src/dashboard/provisioning/dashboards:/usr/share/grafana/conf/provisioning/dashboards
       # - ./src/dashboard/provisioning/datasources:/usr/share/grafana/conf/provisioning/datasources
       - ./src/dashboard/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./src/dashboard/provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./src/dashboard/grafana.ini:/etc/grafana/grafana.ini
-
