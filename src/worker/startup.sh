@@ -8,4 +8,4 @@ export REPLICA_INDEX
 
 echo "Container ID is: $REPLICA_INDEX"
 
-exec /usr/local/bin/worker
+exec /app/target/release/worker
