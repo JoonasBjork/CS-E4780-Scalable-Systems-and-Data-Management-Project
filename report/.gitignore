@@ -1,0 +1,7 @@
+*.cut
+*.aux
+*.out
+*.synctex
+*.gz
+!*.tex
+!*.pdf
