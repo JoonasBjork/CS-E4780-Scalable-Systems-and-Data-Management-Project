@@ -1,4 +1,4 @@
-FROM denoland/deno:alpine-1.31.0
+FROM denoland/deno:alpine-1.46.3
 
 WORKDIR /app
 
@@ -8,4 +8,4 @@ RUN deno cache deps.js
 
 COPY . .
 
-CMD [ "run", "--unstable", "--watch", "--allow-net", "--allow-read", "--allow-env", "app.js" ]
+CMD [ "run", "--unstable", "--watch", "--allow-net", "--allow-read", "--allow-env", "--v8-flags=--expose-gc", 'app.js" ]
