@@ -163,7 +163,6 @@
         "wrapLogMessage": false
       },
       "pluginVersion": "11.3.1",
-      "repeatDirection": "h",
       "targets": [
         {
           "datasource": {
@@ -258,7 +257,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select count(*) \r\nfrom alerts \r\nwhere trading_timestamp between $__timeFrom() and $__timeTo() ",
+          "rawSql": "select count(*) \r\nfrom alerts \r\nwhere created_at between $__timeFrom() and $__timeTo() ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -465,6 +464,6 @@
   "timezone": "browser",
   "title": "my-dashboard",
   "uid": "ee39jei2kml1cc",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }
