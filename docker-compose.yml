@@ -46,6 +46,8 @@ services:
       - PGHOST=${PGHOST}
       - PGPORT=${PGPORT}
       - PGDATABASE=${PGDATABASE}
+    ports:
+      - 9997:5432
 
   flyway:
     image: flyway/flyway:9.11.0-alpine
@@ -105,8 +107,6 @@ services:
       flyway:
         condition: service_completed_successfully
     volumes:
-      # - ./src/dashboard/provisioning/dashboards:/usr/share/grafana/conf/provisioning/dashboards
-      # - ./src/dashboard/provisioning/datasources:/usr/share/grafana/conf/provisioning/datasources
       - ./src/dashboard/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./src/dashboard/provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./src/dashboard/grafana.ini:/etc/grafana/grafana.ini

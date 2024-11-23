@@ -1,0 +1,19 @@
+apiVersion: 1
+datasources:
+  - name: Postgres
+    type: postgres
+    url: ${GF_DATABASE_HOST}
+    user: ${GF_DATABASE_USER}
+    uid: de39cu9bys6wwf
+    secureJsonData:
+      password: ${GF_DATABASE_PASSWORD}
+    jsonData:
+      database: ${}
+      sslmode: 'disable' # disable/require/verify-ca/verify-full
+      maxOpenConns: 2 # Grafana v5.4+
+      maxIdleConns: 1 # Grafana v5.4+
+      maxIdleConnsAuto: true # Grafana v9.5.1+ 
+      connMaxLifetime: 14400 # Grafana v5.4+
+      postgresVersion: 1401 # 903=9.3, 904=9.4, 905=9.5, 906=9.6, 1000=10
+      timescaledb: false
+
