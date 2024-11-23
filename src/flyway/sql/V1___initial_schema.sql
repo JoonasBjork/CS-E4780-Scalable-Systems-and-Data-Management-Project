@@ -18,3 +18,7 @@ CREATE TABLE indicators (
   PRIMARY KEY (symbol, created_at)
 );
 
+CREATE TABLE symbols (
+  symbol VARCHAR(32) PRIMARY KEY
+);
+
