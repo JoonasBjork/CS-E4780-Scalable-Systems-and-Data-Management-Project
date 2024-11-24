@@ -64,7 +64,7 @@ pub fn insert_indicators(
     indicators: &[(String, QuantitativeIndicator)],
 ) -> Result<u64, Error> {
     let mut query = String::from(
-        "INSERT INTO indicators (symbol, ema_38, ema_100, bullish, bearish, last_trade_timestamp, message_count, average_latency_ms) VALUES "
+        "INSERT INTO indicators (symbol, ema_38, ema_100, bullish, bearish, last_price, last_trade_timestamp, message_count, average_latency_ms) VALUES "
     );
     // println!("QUERY BEFORE MODIFICATIONS: {:?}", query);
 
@@ -76,7 +76,7 @@ pub fn insert_indicators(
             query.push_str(", ");
         }
         query.push_str(&format!(
-            "(${}, ${}, ${}, ${}, ${}, ${}, ${}, ${})",
+            "(${}, ${}, ${}, ${}, ${}, ${}, ${}, ${}, ${})",
             query_idx,
             query_idx + 1,
             query_idx + 2,
@@ -84,15 +84,17 @@ pub fn insert_indicators(
             query_idx + 4,
             query_idx + 5,
             query_idx + 6,
-            query_idx + 7
+            query_idx + 7,
+            query_idx + 8
         ));
-        query_idx += 8;
+        query_idx += 9;
 
         params.push(id);
         params.push(&quantitative_indicator.ema_38);
         params.push(&quantitative_indicator.ema_100);
         params.push(&quantitative_indicator.bullish);
         params.push(&quantitative_indicator.bearish);
+        params.push(&quantitative_indicator.most_recent_value);
         params.push(&quantitative_indicator.most_recent_value_timestamp);
         params.push(&quantitative_indicator.previous_count);
         params.push(&quantitative_indicator.previous_average_latency_ms);

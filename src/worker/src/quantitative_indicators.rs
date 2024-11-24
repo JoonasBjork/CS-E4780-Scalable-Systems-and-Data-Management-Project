@@ -42,7 +42,7 @@ pub struct QuantitativeIndicator {
     pub previous_count: i32,
     pub previous_average_latency_ms: Option<i32>,
     // Possibly interesting information about the last value
-    most_recent_value: Option<f64>,
+    pub most_recent_value: Option<f64>,
     pub most_recent_value_timestamp: Option<NaiveDateTime>,
 }
 
