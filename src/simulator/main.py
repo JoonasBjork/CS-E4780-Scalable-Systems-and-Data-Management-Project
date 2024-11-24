@@ -1,15 +1,20 @@
-from queue import Queue
-import threading
+# from queue import Queue
+# import threading
+from multiprocessing import Process, Pipe
 
 from csv_parser import parser_run
 from publisher import publisher_run_redis # publisher_run_http, 
 
 from const import CSV_FILE
 
-task_queue = Queue()
+# task_queue = Queue()
 
-parser_thread = threading.Thread(target=parser_run, args=[CSV_FILE, task_queue])
-publisher_thread = threading.Thread(target=publisher_run_redis, args=[task_queue])
+receive_conn, produce_conn = Pipe()
+# parser_thread = threading.Thread(target=parser_run, args=[CSV_FILE, task_queue])
+# publisher_thread = threading.Thread(target=publisher_run_redis, args=[task_queue])
+
+parser_thread = Process(target=parser_run, args=[CSV_FILE, produce_conn])
+publisher_thread = Process(target=publisher_run_redis, args=[receive_conn])
 
 # Start the threads
 parser_thread.start()

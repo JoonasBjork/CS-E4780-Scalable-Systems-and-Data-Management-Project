@@ -1,4 +1,5 @@
-import queue
+# import queue
+from multiprocessing import Pipe
 import csv
 import time
 from datetime import datetime, timedelta
@@ -85,7 +86,7 @@ def read_from_offset(filename: str, start_offset: int, buffer_size: int = 128) -
             yield row
 
 
-def parser_run(csv_file: str, queue: queue.Queue) -> None:
+def parser_run(csv_file: str, queue) -> None:
     try:
 
         generator = read_from_offset(csv_file, 100010000)
@@ -98,14 +99,16 @@ def parser_run(csv_file: str, queue: queue.Queue) -> None:
 
 
         print("[PARSER] Starting to add items to queue")
-        print("[PARSER] Current time:", datetime.now() - time_shift, "Time of the first_record", first_record)
+        # print("[PARSER] Current time:", datetime.now() - time_shift, "Time of the first_record", first_record)
 
         try:
+            iter = 0
             while True:
+                # iter += 1
                 record = next(generator)
 
                 if record[TIME_OFFSET] == '':
-                    queue.put(csv_row_to_redis(record, None))
+                    queue.send(csv_row_to_redis(record, None))
                     continue
 
                 # record_timestamp = 
@@ -122,7 +125,11 @@ def parser_run(csv_file: str, queue: queue.Queue) -> None:
                 # print("[Parser] out of infinite loop")
 
                 timestamp = parse_time(record[TIME_OFFSET])
-                queue.put(csv_row_to_redis(record, timestamp))
+                
+                # if iter % 100 == 0:
+                #     print("[PARSER] iter:", iter)
+
+                queue.send(csv_row_to_redis(record, timestamp))
                 # if record[TIME_OFFSET] and record[PRICE_OFFSET]:
                 #     normal_count += 1
                 # else:

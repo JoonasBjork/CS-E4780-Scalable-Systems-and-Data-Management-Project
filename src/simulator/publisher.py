@@ -1,8 +1,9 @@
-from queue import Queue
+# from queue import Queue
 import redis
 from datetime import datetime
 import time
 import requests
+from multiprocessing import Pipe
 
 from const import *
 
@@ -21,7 +22,7 @@ def calculate_stream_name(s, worker_count):
     return f"s{id_number}"
 
 
-def publisher_run_redis(queue: Queue) -> None:
+def publisher_run_redis(queue) -> None:
     """ The publisher will emit event through redis stream"""
     try:
         stream_names = {}
@@ -35,7 +36,7 @@ def publisher_run_redis(queue: Queue) -> None:
         # redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
         while True:
             # if queue.not_empty:
-            item = queue.get()
+            item = queue.recv()
             # print("GOT ITEM FROM QUEUE", item)
             item_id = item["id"]
             if item_id not in stream_names:
@@ -52,7 +53,7 @@ def publisher_run_redis(queue: Queue) -> None:
             if iter % 1000 < MESSAGE_MULTIPLIER:
                 print("[PUBLISHER] iter:", iter)
                 # print("Item:", item)
-                print("Number of items in the queue:", queue.qsize())
+                # print("Number of items in the queue:", queue.qsize())
             iter += MESSAGE_MULTIPLIER
                 
             for _ in range(MESSAGE_MULTIPLIER):
