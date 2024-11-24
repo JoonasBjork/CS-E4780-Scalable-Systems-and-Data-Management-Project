@@ -66,21 +66,20 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
-          },
-          "unit": "s"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 3,
         "x": 0,
         "y": 2
       },
-      "id": 4,
+      "id": 3,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -108,7 +107,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT \r\n  AVG(latency_ms) / 1000 AS latency\r\nFROM (\r\n  SELECT average_latency_ms AS latency_ms\r\n  FROM indicators\r\n  WHERE \r\n    created_at > NOW() - INTERVAL '10 seconds'\r\n    AND message_count > 0\r\n  LIMIT 100\r\n) AS limited_data;",
+          "rawSql": "select count(*) \r\nfrom alerts \r\nwhere created_at between $__timeFrom() and $__timeTo() ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -127,10 +126,91 @@
             ],
             "limit": 50
           },
-          "table": "indicators"
+          "table": "alerts"
         }
       ],
-      "title": "Latency",
+      "title": "Invalid events",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "de39cu9bys6wwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 2
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "select \r\n  COUNT(message_count)\r\nfrom indicators \r\nwhere created_at between $__timeFrom() and $__timeTo() ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Valid events",
       "type": "stat"
     },
     {
@@ -142,9 +222,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 10,
-        "x": 4,
+        "h": 8,
+        "w": 9,
+        "x": 6,
         "y": 2
       },
       "id": 2,
@@ -198,9 +278,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 10,
-        "x": 14,
+        "h": 8,
+        "w": 9,
+        "x": 15,
         "y": 2
       },
       "id": 5,
@@ -245,7 +325,7 @@
           }
         }
       ],
-      "title": "Bearish stock",
+      "title": "Bearish stocks",
       "type": "logs"
     },
     {
@@ -259,6 +339,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
+          "noValue": "No valid records",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -276,12 +357,95 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
-        "w": 4,
+        "h": 4,
+        "w": 3,
         "x": 0,
         "y": 6
       },
-      "id": 3,
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n  message_count\r\nFROM \r\n  indicators\r\nWHERE\r\n  symbol = '555200.ETR' AND\r\n  created_at > NOW() - INTERVAL '10 seconds' \r\nLIMIT \r\n  1;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Stock events in last window",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "de39cu9bys6wwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "No valid records",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 6
+      },
+      "id": 4,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -309,7 +473,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select count(*) \r\nfrom alerts \r\nwhere created_at between $__timeFrom() and $__timeTo() ",
+          "rawSql": "SELECT \r\n  AVG(latency_ms) / 1000 AS latency\r\nFROM (\r\n  SELECT average_latency_ms AS latency_ms\r\n  FROM indicators\r\n  WHERE \r\n    created_at > NOW() - INTERVAL '10 seconds'\r\n    AND message_count > 0\r\n  LIMIT 100\r\n) AS limited_data;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -328,10 +492,10 @@
             ],
             "limit": 50
           },
-          "table": "alerts"
+          "table": "indicators"
         }
       ],
-      "title": "Number of alerts",
+      "title": "Latency",
       "type": "stat"
     },
     {
@@ -398,7 +562,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 10
       },
       "id": 1,
       "options": {
@@ -423,7 +587,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT ema_100, created_at as time FROM indicators WHERE symbol = '$stock_id';",
+          "rawSql": "SELECT ema_100 as \"EMA 100\", created_at as time FROM indicators WHERE symbol = '$stock_id';",
           "refId": "A",
           "sql": {
             "columns": [
@@ -458,7 +622,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT ema_38, created_at as time FROM indicators WHERE symbol = '$stock_id';",
+          "rawSql": "SELECT ema_38 as \"EMA 38\", created_at as time FROM indicators WHERE symbol = '$stock_id';",
           "refId": "B",
           "sql": {
             "columns": [
@@ -478,7 +642,117 @@
           "table": "ema"
         }
       ],
-      "title": "Panel Title",
+      "title": "EMA development",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "de39cu9bys6wwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \r\n  last_price as \"Last price\", \r\n  created_at as time \r\nFROM \r\n  indicators \r\nWHERE \r\n  symbol = '$stock_id';",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "indicators"
+        }
+      ],
+      "title": "Most recent price",
       "type": "timeseries"
     }
   ],

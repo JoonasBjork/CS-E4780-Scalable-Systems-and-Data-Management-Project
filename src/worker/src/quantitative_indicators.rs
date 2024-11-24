@@ -121,11 +121,30 @@ impl QuantitativeIndicator {
     }
 
     pub fn calculate_both_emas(&mut self) -> () {
+        // println!(
+        //     "Old emas: {}, {}, {}, {}",
+        //     self.ema_38, self.ema_100, self.prev_ema_38, self.prev_ema_100
+        // );
         self.calculate_new_ema_38();
         self.calculate_new_ema_100();
+        // println!(
+        //     "New emas: {}, {}, {}, {}",
+        //     self.ema_38, self.ema_100, self.prev_ema_38, self.prev_ema_100
+        // );
 
-        self.bullish = self.ema_38 > self.ema_100 && self.prev_ema_38 <= self.prev_ema_100;
-        self.bearish = self.ema_38 < self.ema_100 && self.prev_ema_38 >= self.prev_ema_100;
+        // If the values have not been initialized yet (no previous stocks seen), don't set the bullish/bearish
+        if self.prev_ema_38 == 0.0 || self.prev_ema_100 == 0.0 {
+            self.bullish = false;
+            self.bearish = false;
+            // println!("OLD EMAS ARE ZEROS");
+        } else {
+            self.bullish = self.ema_38 > self.ema_100 && self.prev_ema_38 <= self.prev_ema_100;
+            self.bearish = self.ema_38 < self.ema_100 && self.prev_ema_38 >= self.prev_ema_100;
+            // println!(
+            //     "FOUND NEW BULLISH/BEARISH: {}, {}",
+            //     self.bullish, self.bearish
+            // );
+        }
     }
 
     pub fn clear_most_recent_value(&mut self) -> () {
