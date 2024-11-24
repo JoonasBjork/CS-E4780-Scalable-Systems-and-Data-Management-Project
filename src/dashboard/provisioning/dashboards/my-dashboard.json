@@ -23,8 +23,8 @@
   "panels": [
     {
       "datasource": {
-        "type": "datasource",
-        "uid": "grafana"
+        "type": "grafana-postgresql-datasource",
+        "uid": "de39cu9bys6wwf"
       },
       "fieldConfig": {
         "defaults": {
@@ -41,10 +41,11 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 1
               }
             ]
-          }
+          },
+          "unit": "s"
         },
         "overrides": []
       },
@@ -75,7 +76,33 @@
       "pluginVersion": "11.3.1",
       "targets": [
         {
-          "refId": "A"
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "de39cu9bys6wwf"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \r\n  AVG(latency_ms) / 1000 AS latency\r\nFROM (\r\n  SELECT average_latency_ms AS latency_ms\r\n  FROM indicators\r\n  WHERE \r\n    created_at > NOW() - INTERVAL '10 seconds'\r\n    AND message_count > 0\r\n  LIMIT 100\r\n) AS limited_data;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "indicators"
         }
       ],
       "title": "Latency",
@@ -112,7 +139,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select symbol, last_trade_timestamp as time from indicators where bullish=true order by last_trade_timestamp limit 10;",
+          "rawSql": "select \r\n  symbol, \r\n  created_at as time, \r\n  ema_38 as \"EMA 38\", \r\n  ema_100 as \"EMA 100\", \r\n  last_trade_timestamp as \"Most recent trade\", \r\n  message_count as \"Events in last window\", \r\n  average_latency_ms as \"Average latency (ms)\" \r\nfrom indicators \r\nwhere \r\n  bullish=true \r\n  AND created_at > NOW() - INTERVAL '10 seconds' \r\nORDER BY symbol;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -172,7 +199,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select symbol from indicators ORDER BY last_trade_time where bearish=true limit 10;",
+          "rawSql": "select \r\n  symbol, \r\n  created_at as time, \r\n  ema_38 as \"EMA 38\", \r\n  ema_100 as \"EMA 100\", \r\n  last_trade_timestamp as \"Most recent trade\", \r\n  message_count as \"Events in last window\", \r\n  average_latency_ms as \"Average latency (ms)\" \r\nfrom indicators \r\nwhere \r\n  bearish=true \r\n  AND created_at > NOW() - INTERVAL '10 seconds'\r\nORDER BY symbol;",
           "refId": "A",
           "sql": {
             "columns": [
