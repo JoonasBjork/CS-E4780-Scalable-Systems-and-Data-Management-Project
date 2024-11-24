@@ -22,6 +22,31 @@
   "links": [],
   "panels": [
     {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# CS-E4780 Scalable Systems and Data Management Project Dashboard",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.3.1",
+      "title": "",
+      "type": "text"
+    },
+    {
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "de39cu9bys6wwf"
@@ -53,7 +78,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 0
+        "y": 2
       },
       "id": 4,
       "options": {
@@ -120,7 +145,7 @@
         "h": 7,
         "w": 10,
         "x": 4,
-        "y": 0
+        "y": 2
       },
       "id": 2,
       "options": {
@@ -176,7 +201,7 @@
         "h": 7,
         "w": 10,
         "x": 14,
-        "y": 0
+        "y": 2
       },
       "id": 5,
       "options": {
@@ -254,7 +279,7 @@
         "h": 3,
         "w": 4,
         "x": 0,
-        "y": 4
+        "y": 6
       },
       "id": 3,
       "options": {
@@ -373,7 +398,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 9
       },
       "id": 1,
       "options": {
@@ -398,7 +423,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT ema_100, created_at as time FROM indicators WHERE symbol = '$stock_id' limit 50;",
+          "rawSql": "SELECT ema_100, created_at as time FROM indicators WHERE symbol = '$stock_id';",
           "refId": "A",
           "sql": {
             "columns": [
@@ -433,7 +458,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT ema_38, created_at as time FROM indicators WHERE symbol = '$stock_id' limit 50;",
+          "rawSql": "SELECT ema_38, created_at as time FROM indicators WHERE symbol = '$stock_id';",
           "refId": "B",
           "sql": {
             "columns": [
