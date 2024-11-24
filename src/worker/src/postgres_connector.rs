@@ -63,7 +63,6 @@ pub fn insert_indicators(
     client: &mut Client,
     indicators: &[(String, QuantitativeIndicator)],
 ) -> Result<u64, Error> {
-    println!("INSIDE INSERT_INDICATORS!!!");
     let mut query = String::from(
         "INSERT INTO indicators (symbol, ema_38, ema_100, bullish, bearish, last_trade_timestamp, message_count, average_latency_ms) VALUES "
     );
