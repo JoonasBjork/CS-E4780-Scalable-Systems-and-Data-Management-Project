@@ -61,22 +61,22 @@ services:
       - FLYWAY_PASSWORD=${FLYWAY_PASSWORD}
       - FLYWAY_URL=${FLYWAY_URL}
 
-  manager:
-    build:
-      context: ./src/manager
-      dockerfile: Dockerfile
-    image: manager
-    restart: "no"
-    volumes:
-      - ./src/manager/:/app
-    depends_on:
-      - flyway
-      - redis-streams
-      - simulator
-    environment:
-      - WORKER_COUNT=${WORKER_COUNT}
-    deploy:
-      replicas: ${MANAGER_COUNT}
+  # manager:
+  #   build:
+  #     context: ./src/manager
+  #     dockerfile: Dockerfile
+  #   image: manager
+  #   restart: "no"
+  #   volumes:
+  #     - ./src/manager/:/app
+  #   depends_on:
+  #     - flyway
+  #     - redis-streams
+  #     - simulator
+  #   environment:
+  #     - WORKER_COUNT=${WORKER_COUNT}
+  #   deploy:
+  #     replicas: ${MANAGER_COUNT}
 
   simulator:
     build:
@@ -92,6 +92,9 @@ services:
       - ./data/:/data
     deploy:
       replicas: ${SIMULATOR_COUNT}
+    environment:
+      - MESSAGE_MULTIPLIER=${MESSAGE_MULTIPLIER}
+      - WORKER_COUNT=${WORKER_COUNT}
 
   grafana:
     container_name: grafana

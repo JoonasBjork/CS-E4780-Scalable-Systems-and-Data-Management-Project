@@ -6,35 +6,57 @@ import requests
 
 from const import *
 
+stream_names = {}
+
+# Convert a string into a number based on character codes
+def string_to_number(s):
+    total = 0
+    for char in s:
+        total += ord(char)  # ord() gets the Unicode code point of a character
+    return total
+
+# Generate a stream name based on the string
+def calculate_stream_name(s, worker_count):
+    id_number = string_to_number(s) % worker_count + 1
+    return f"s{id_number}"
+
+
 def publisher_run_redis(queue: Queue) -> None:
     """ The publisher will emit event through redis stream"""
     try:
+        stream_names = {}
         print("[PUBLISHER] Publisher started")
 
         iter = 0
 
         # Initialize the redis client parameter
         redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
-        stream_name = STREAM_NAME
-        redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
+        # stream_name = STREAM_NAME
+        # redis_client.xtrim(stream_name, 0) # Cleanup the stream before starting up
         while True:
             # if queue.not_empty:
             item = queue.get()
             # print("GOT ITEM FROM QUEUE", item)
+            item_id = item["id"]
+            if item_id not in stream_names:
+                # Small optimization to reduce calcultation
+                stream_names[item_id] = calculate_stream_name(item_id, WORKER_COUNT)
+            
+            stream_name = stream_names[item_id]
             
             if item["date"]:
                 item["date"] = datetime.now().strftime("%d-%m-%Y")
             if item["time"]:
                 item["time"] = datetime.now().strftime("%H:%M:%S.%f")
 
-            if iter % 1000 == 0:
+            if iter % 1000 < MESSAGE_MULTIPLIER:
                 print("[PUBLISHER] iter:", iter)
                 # print("Item:", item)
-                # print("Number of items in the queue:", queue.qsize())
-            iter += 1
+                print("Number of items in the queue:", queue.qsize())
+            iter += MESSAGE_MULTIPLIER
                 
-
-            redis_client.xadd(stream_name, item)
+            for _ in range(MESSAGE_MULTIPLIER):
+                redis_client.xadd(stream_name, item)
     except KeyboardInterrupt:
         return
     

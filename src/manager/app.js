@@ -3,7 +3,6 @@ import { serve } from "./deps.js";
 import async from "npm:async";
 
 
-
 //const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // manager id
 const MANAGER_ID = crypto.randomUUID();
@@ -38,6 +37,8 @@ const streamName = (str) => {
     return `s${id_number}`;
 };
 
+
+let id_to_stream = new Map();
 let gcIter = 0;
 
 let stock_data
@@ -53,7 +54,7 @@ async.forever(
                     id: ">",
                 },
                 {
-                    count: 10,
+                    count: 100,
                     block: 5000,
                 }
             );
@@ -70,7 +71,7 @@ async.forever(
                         id: ">",
                     },
                     {
-                        count: 10,
+                        count: 100,
                         block: 5000,
                     }
                 );
@@ -85,15 +86,22 @@ async.forever(
         }
         // reading data from fetched data
         if (stock_data) {
+            // console.log("[MANAGER] Received", stock_data[0].messages.length, "Messages");
             for (let i = 0; i < stock_data[0].messages.length; i++) {
                 const message = stock_data[0].messages[i].message;
                 const message_id = stock_data[0].messages[i].id;
                 const { id, sectype, last, time, date } = message;
 
-                const queue_name = streamName(id);
+                if (!(id in id_to_stream)) {
+                    // If the id is not yet in the id_to_stream hashmap, add it to it
+                    id_to_stream.set(id, streamName(id));
+                }
+
+                const stream_name = id_to_stream.get(id);
+
                 // send data to worker
                 try {
-                    await client.xAdd(queue_name, "*", {
+                    await client.xAdd(stream_name, "*", {
                         id,
                         sectype,
                         last,
@@ -112,7 +120,7 @@ async.forever(
                 //await delay(20);
                 // This iteration doesn't match the other iterations. It should be inside the for loop if you want to print the iterations. 
                 // Iteration: ${iter}, 
-                console.log(`Memory usage:`, Deno.memoryUsage());
+                // console.log(`Memory usage:`, Deno.memoryUsage());
             }
         }
         stock_data = null;
