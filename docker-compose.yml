@@ -100,7 +100,7 @@ services:
     ports:
       - 9999:3000
     env_file:
-      - src/project.env
+      - .env # Change this to take the actual envvars, not just a file with a large number of envvars. Giving all envvars makes it hard to know which vars are important
     depends_on:
       database:
         condition: service_started
