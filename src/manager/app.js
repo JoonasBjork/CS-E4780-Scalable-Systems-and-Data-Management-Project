@@ -38,7 +38,7 @@ const streamName = (str) => {
     return `s${id_number}`;
 };
 
-let iter = 0;
+let gcIter = 0;
 
 let stock_data
 async.forever(
@@ -76,12 +76,12 @@ async.forever(
                 );
             } catch (groupError) {
                 console.error("Failed to create group or read messages", groupError);
-                return; 
+                return;
             }
         }
-       
-        if(!stock_data){
-            return;     
+
+        if (!stock_data) {
+            return;
         }
         // reading data from fetched data
         if (stock_data) {
@@ -106,15 +106,17 @@ async.forever(
                     console.error("Failed to scale", error);
                 }
             }
-            if (++iter % 100 === 0) {
+            if (++gcIter % 1000 === 0) {
                 // gabage collect 
                 gc();
                 //await delay(20);
-                console.log(`Iteration: ${iter}, Memory usage:`, Deno.memoryUsage());
+                // This iteration doesn't match the other iterations. It should be inside the for loop if you want to print the iterations. 
+                // Iteration: ${iter}, 
+                console.log(`Memory usage:`, Deno.memoryUsage());
             }
         }
-        stock_data=null;
-        
+        stock_data = null;
+
     },
     (err) => {
         console.error("An error occurred in async.forever loop", err);
