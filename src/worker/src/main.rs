@@ -101,7 +101,7 @@ fn main() -> Result<(), RedisError> {
                         for entry in stream.ids {
                             latest_id = entry.id.clone();
 
-                            if iter % 100 == 0 {
+                            if iter % 1000 == 0 {
                                 println!(
                                     "Reading values from stream {}, iter {}, latest_id {}",
                                     &stream_key, iter, latest_id
@@ -129,10 +129,12 @@ fn main() -> Result<(), RedisError> {
                                     let mut quantitative_indicator =
                                         quant_indicator_lock.lock().unwrap();
 
+                                    // println!("Updating qi dataentry: {}", record_object);
                                     quantitative_indicator.update_most_recent_value(
-                                        Some(record_object.last.unwrap()),
-                                        Some(record_object.timestamp.unwrap()),
+                                        record_object.last.unwrap(),
+                                        record_object.timestamp.unwrap(),
                                     );
+                                    // println!("UPDATED qi dataentry: {}", record_object);
                                     // println!("DEBUG WORKER PRODUCER DROPPING READ LOCK");
                                 } else {
                                     // Create the quantitativeIndicator Object and add it to the ema_producer_data
@@ -144,13 +146,15 @@ fn main() -> Result<(), RedisError> {
                                     // println!("DEBUG WORKER PRODUCER TAKING WRITE LOCK");
                                     let mut write_lock = ema_producer_data.write().unwrap();
 
+                                    // println!("Inserting new qi dataentry: {}", record_object);
                                     write_lock.insert(
                                         record_object.id.as_ref().unwrap().clone(),
                                         Mutex::new(QuantitativeIndicator::new(
-                                            Some(record_object.last.unwrap()),
-                                            Some(record_object.timestamp.unwrap()),
+                                            record_object.last.unwrap(),
+                                            record_object.timestamp.unwrap(),
                                         )),
                                     );
+                                    // println!("INSERTED new qi dataentry: {}", record_object);
                                     // println!("DEBUG WORKER PRODUCER DROPPING WRITE LOCK")
                                 }
                             } else {
@@ -177,11 +181,14 @@ fn main() -> Result<(), RedisError> {
                         .flat_map(|x| x.ids.into_iter().map(|y| y.id))
                         .collect::<Vec<String>>();
 
-                    let xdel_result: RedisResult<i32> = redis_con.xdel(&[&stream_key], &[read_ids]);
+                    if !read_ids.is_empty() {
+                        let xdel_result: RedisResult<i32> =
+                            redis_con.xdel(&[&stream_key], &[read_ids]);
 
-                    match xdel_result {
-                        Ok(_) => {}
-                        Err(e) => println!("ERROR IN del_result: {}", e),
+                        match xdel_result {
+                            Ok(_) => {}
+                            Err(e) => println!("ERROR IN del_result: {}", e),
+                        }
                     }
                 }
                 Err(e) => {
@@ -257,12 +264,21 @@ fn main() -> Result<(), RedisError> {
             for (id, mutex) in read_lock.iter() {
                 let mut indicator_ref = mutex.lock().unwrap();
                 indicator_ref.calculate_both_emas();
+                indicator_ref.calculate_average_latency();
                 // let indicator: &QuantitativeIndicator = &*indicator_ref;
                 quant_indicators.push((id.clone(), (*indicator_ref).clone()));
+                indicator_ref.clear_most_recent_value();
             }
 
             // println!("DEBUG WORKER EMA_CONSUMER DROPPING READ LOCK");
             drop(read_lock);
+
+            if quant_indicators.is_empty() {
+                println!("QUANT INDICATORS IS EMPTY, SKIPPING...");
+                continue;
+            }
+
+            // println!("QUANT INDICATORS: {:?}", quant_indicators);
 
             let insert_indicators_res = insert_indicators(&mut postgres_client, &quant_indicators);
             match insert_indicators_res {

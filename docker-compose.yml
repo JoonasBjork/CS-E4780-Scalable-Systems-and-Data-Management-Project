@@ -46,6 +46,8 @@ services:
       - PGHOST=${PGHOST}
       - PGPORT=${PGPORT}
       - PGDATABASE=${PGDATABASE}
+    ports:
+      - 9997:5432
 
   flyway:
     image: flyway/flyway:9.11.0-alpine
@@ -90,3 +92,21 @@ services:
       - ./data/:/data
     deploy:
       replicas: ${SIMULATOR_COUNT}
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    restart: on-failure
+    ports:
+      - 9999:3000
+    env_file:
+      - .env # Change this to take the actual envvars, not just a file with a large number of envvars. Giving all envvars makes it hard to know which vars are important
+    depends_on:
+      database:
+        condition: service_started
+      flyway:
+        condition: service_completed_successfully
+    volumes:
+      - ./src/dashboard/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./src/dashboard/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./src/dashboard/grafana.ini:/etc/grafana/grafana.ini

@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{Local, NaiveDateTime};
 use std::fmt;
 
 // #[derive(Debug, Clone)]
@@ -27,23 +27,36 @@ use std::fmt;
 //     }
 // }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct QuantitativeIndicator {
+    // Stock information
     pub ema_38: f64,
     pub prev_ema_38: f64,
     pub ema_100: f64,
     pub prev_ema_100: f64,
     pub bullish: bool,
     pub bearish: bool,
+    // Analytics
+    pub count_in_this_window: i32,
+    pub total_latency_in_this_window_ms: i32,
+    pub previous_count: i32,
+    pub previous_average_latency_ms: Option<i32>,
+    // Possibly interesting information about the last value
     most_recent_value: Option<f64>,
     pub most_recent_value_timestamp: Option<NaiveDateTime>,
 }
 
 impl QuantitativeIndicator {
-    pub fn new(
-        most_recent_value: Option<f64>,
-        most_recent_value_timestamp: Option<NaiveDateTime>,
-    ) -> Self {
+    pub fn new(most_recent_value: f64, most_recent_value_timestamp: NaiveDateTime) -> Self {
+        let latency: i32 = Local::now()
+            .naive_local()
+            .signed_duration_since(most_recent_value_timestamp)
+            .num_milliseconds()
+            .try_into()
+            .unwrap_or_else(|_| {
+                eprintln!("ERROR: Duration exceeds i32 range; setting to maximum/minimum value");
+                i32::MAX
+            });
         QuantitativeIndicator {
             ema_38: 0.0,
             prev_ema_38: 0.0,
@@ -51,18 +64,22 @@ impl QuantitativeIndicator {
             prev_ema_100: 0.0,
             bullish: false,
             bearish: false,
-            most_recent_value: most_recent_value,
-            most_recent_value_timestamp: most_recent_value_timestamp,
+            count_in_this_window: 1,
+            total_latency_in_this_window_ms: latency,
+            previous_count: 0,
+            previous_average_latency_ms: None,
+            most_recent_value: Some(most_recent_value),
+            most_recent_value_timestamp: Some(most_recent_value_timestamp),
         }
     }
 
     pub fn update_most_recent_value(
         &mut self,
-        most_recent_value: Option<f64>,
-        most_recent_value_timestamp: Option<NaiveDateTime>,
+        most_recent_value: f64,
+        most_recent_value_timestamp: NaiveDateTime,
     ) -> () {
-        self.most_recent_value = most_recent_value;
-        self.most_recent_value_timestamp = most_recent_value_timestamp
+        self.most_recent_value = Some(most_recent_value);
+        self.most_recent_value_timestamp = Some(most_recent_value_timestamp)
     }
 
     pub fn calculate_new_ema_38(&mut self) -> f64 {
@@ -103,16 +120,30 @@ impl QuantitativeIndicator {
         return new_ema;
     }
 
-    pub fn calculate_both_emas(&mut self) -> (f64, f64) {
-        let ema_38 = self.calculate_new_ema_38();
-        let ema_100 = self.calculate_new_ema_100();
+    pub fn calculate_both_emas(&mut self) -> () {
+        self.calculate_new_ema_38();
+        self.calculate_new_ema_100();
 
         self.bullish = self.ema_38 > self.ema_100 && self.prev_ema_38 <= self.prev_ema_100;
         self.bearish = self.ema_38 < self.ema_100 && self.prev_ema_38 >= self.prev_ema_100;
+    }
+
+    pub fn clear_most_recent_value(&mut self) -> () {
         self.most_recent_value = None;
         self.most_recent_value_timestamp = None;
+    }
 
-        return (ema_38, ema_100);
+    pub fn calculate_average_latency(&mut self) -> () {
+        if self.count_in_this_window > 0 {
+            self.previous_average_latency_ms =
+                Some(self.total_latency_in_this_window_ms / self.count_in_this_window);
+        } else {
+            self.previous_average_latency_ms = None;
+        }
+
+        self.previous_count = self.count_in_this_window;
+        self.total_latency_in_this_window_ms = 0;
+        self.count_in_this_window = 0;
     }
 }
 

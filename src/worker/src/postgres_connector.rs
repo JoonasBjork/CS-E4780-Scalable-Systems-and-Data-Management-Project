@@ -64,26 +64,29 @@ pub fn insert_indicators(
     indicators: &[(String, QuantitativeIndicator)],
 ) -> Result<u64, Error> {
     let mut query = String::from(
-        "INSERT INTO indicators (symbol, ema_38, ema_100, bullish, bearish, last_trade_timestamp) VALUES "
+        "INSERT INTO indicators (symbol, ema_38, ema_100, bullish, bearish, last_trade_timestamp, message_count, average_latency_ms) VALUES "
     );
+    // println!("QUERY BEFORE MODIFICATIONS: {:?}", query);
 
     let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
 
-    let mut query_idx = 1;
+    let mut query_idx: u128 = 1;
     for (i, (id, quantitative_indicator)) in indicators.iter().enumerate() {
         if i > 0 {
             query.push_str(", ");
         }
         query.push_str(&format!(
-            "(${}, ${}, ${}, ${}, ${}, ${})",
+            "(${}, ${}, ${}, ${}, ${}, ${}, ${}, ${})",
             query_idx,
             query_idx + 1,
             query_idx + 2,
             query_idx + 3,
             query_idx + 4,
-            query_idx + 5
+            query_idx + 5,
+            query_idx + 6,
+            query_idx + 7
         ));
-        query_idx += 6;
+        query_idx += 8;
 
         params.push(id);
         params.push(&quantitative_indicator.ema_38);
@@ -91,7 +94,11 @@ pub fn insert_indicators(
         params.push(&quantitative_indicator.bullish);
         params.push(&quantitative_indicator.bearish);
         params.push(&quantitative_indicator.most_recent_value_timestamp);
+        params.push(&quantitative_indicator.previous_count);
+        params.push(&quantitative_indicator.previous_average_latency_ms);
     }
+
+    // println!("QUERY AFTER MODIFICATIONS: {:?}", query);
 
     let params_refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|b| &**b).collect();
 
