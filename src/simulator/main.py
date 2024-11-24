@@ -2,7 +2,7 @@ from queue import Queue
 import threading
 
 from csv_parser import parser_run
-from publisher import publisher_run_http, publisher_run_redis
+from publisher import publisher_run_redis # publisher_run_http, 
 
 from const import CSV_FILE
 
