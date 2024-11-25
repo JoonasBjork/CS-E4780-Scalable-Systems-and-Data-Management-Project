@@ -73,13 +73,24 @@ impl QuantitativeIndicator {
         }
     }
 
-    pub fn update_most_recent_value(
+    pub fn receive_new_value(
         &mut self,
         most_recent_value: f64,
         most_recent_value_timestamp: NaiveDateTime,
     ) -> () {
+        let latency: i32 = Local::now()
+            .naive_local()
+            .signed_duration_since(most_recent_value_timestamp)
+            .num_milliseconds()
+            .try_into()
+            .unwrap_or_else(|_| {
+                eprintln!("ERROR: Duration exceeds i32 range; setting to maximum/minimum value");
+                i32::MAX
+            });
         self.most_recent_value = Some(most_recent_value);
-        self.most_recent_value_timestamp = Some(most_recent_value_timestamp)
+        self.most_recent_value_timestamp = Some(most_recent_value_timestamp);
+        self.count_in_this_window += 1;
+        self.total_latency_in_this_window_ms += latency;
     }
 
     pub fn calculate_new_ema_38(&mut self) -> f64 {

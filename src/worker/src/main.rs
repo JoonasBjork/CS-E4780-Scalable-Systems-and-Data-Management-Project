@@ -131,7 +131,7 @@ fn main() -> Result<(), RedisError> {
                                         quant_indicator_lock.lock().unwrap();
 
                                     // println!("Updating qi dataentry: {}", record_object);
-                                    quantitative_indicator.update_most_recent_value(
+                                    quantitative_indicator.receive_new_value(
                                         record_object.last.unwrap(),
                                         record_object.timestamp.unwrap(),
                                     );
@@ -275,15 +275,18 @@ fn main() -> Result<(), RedisError> {
 
             // println!("QUANT INDICATORS: {:?}", quant_indicators);
 
-            let insert_indicators_res = insert_indicators(&mut postgres_client, &quant_indicators);
-            match insert_indicators_res {
-                Ok(changed_lines) => {
-                    println!(
-                        "EMA consumer added {} lines to postgre indicators",
-                        changed_lines
-                    )
+            // The postgre query can't handle the number of parameters - need to split the request into multiple parts
+            for chunk in quant_indicators.chunks(3000) {
+                let insert_indicators_res = insert_indicators(&mut postgres_client, chunk);
+                match insert_indicators_res {
+                    Ok(changed_lines) => {
+                        println!(
+                            "EMA consumer added {} lines to postgre indicators",
+                            changed_lines
+                        )
+                    }
+                    Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
                 }
-                Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
             }
         }
     });
