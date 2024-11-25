@@ -1,3 +1,33 @@
+from typing import Optional
+import os 
+
+def get_str_envvar(envvar_name: str, default_value: Optional[str] = None) -> str:
+    # If no default value is given, throw an exception
+
+    value = os.environ.get(envvar_name)
+    if value is not None:
+        print(f"Set environment variable {envvar_name} to {value}")
+        return value
+
+    if default_value is not None:
+        print(f"Set environment variable {envvar_name} to {default_value}")
+        return default_value
+    
+    raise RuntimeError(f"envvar {envvar_name} does not exist and no default value was given")
+
+    
+def get_int_envvar(envvar_name: str, default_value: Optional[int]) -> int:
+    try:
+        str_default_value = str(default_value) if default_value is not None else None
+        str_envvar = get_str_envvar(envvar_name, str_default_value)
+        return int(str_envvar)
+    except ValueError:
+        raise RuntimeError(
+            f"envvar {envvar_name} could not be converted to an integer"
+        )
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error in get_int_envvar: {e}")
+
 CSV_FILE = '/data/debs2022-gc-trading-day-08-11-21.csv'
 ID_OFFSET = 0
 SEC_TYPE_OFFSET = 1
@@ -5,39 +35,10 @@ DATE_OFFSET = 2
 PRICE_OFFSET = 21
 TIME_OFFSET = 23
 
-REDIS_HOST = 'redis-streams'
-REDIS_PORT = 6379
-STREAM_NAME = 'ingress'
-
-MANAGER_URL = 'http://manager:7777'
-
-import os 
-
-WORKER_COUNT = os.environ.get("WORKER_COUNT")
-
-if WORKER_COUNT is None:
-    WORKER_COUNT = 1
-else:
-    try:
-        WORKER_COUNT = int(WORKER_COUNT)
-        print("Set WORKER_COUNT to:", WORKER_COUNT)
-    except Exception as e:
-        print("WORKER_COUNT caused error:", e)
-        print("Setting WORKER_COUNT TO 1")
-        WORKER_COUNT = 1
-
-MESSAGE_MULTIPLIER = os.environ.get("MESSAGE_MULTIPLIER")
-
-if MESSAGE_MULTIPLIER is None:
-    MESSAGE_MULTIPLIER = 1
-else:
-    try:
-        MESSAGE_MULTIPLIER = int(MESSAGE_MULTIPLIER)
-        print("Set MESSAGE_MULTIPLIER to:", MESSAGE_MULTIPLIER)
-    except Exception as e:
-        print("MESSAGE_MULTIPLIER caused error:", e)
-        print("Setting MESSAGE_MULTIPLIER TO 1")
-        MESSAGE_MULTIPLIER = 1
+WORKER_COUNT = get_int_envvar("WORKER_COUNT", 1)
+MESSAGE_MULTIPLIER = get_int_envvar("MESSAGE_MULTIPLIER", 1)
+REDIS_HOST = get_str_envvar("REDIS_HOST")
+REDIS_PORT = get_str_envvar("REDIS_PORT")
 
 devlocal = os.environ.get('DEVLOCAL')
 if devlocal is not None and devlocal.lower() in ['1', 'true', 'yes']:

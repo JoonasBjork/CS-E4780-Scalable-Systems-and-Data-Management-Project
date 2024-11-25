@@ -4,13 +4,11 @@ services:
     image: redis
     restart: on-failure
     ports:
-      - 6379:6379
+      - ${REDIS_PORT}:${REDIS_PORT}
     volumes:
       - ./src/ingress-redis-streams/data:/data
       - ./src/ingress-redis-streams/redis.conf:/usr/local/etc/redis/redis.conf
     entrypoint: redis-server /usr/local/etc/redis/redis.conf
-    depends_on:
-      - flyway # Not necessary, but we want the flyway to start first
 
   worker:
     build:
@@ -61,23 +59,6 @@ services:
       - FLYWAY_PASSWORD=${FLYWAY_PASSWORD}
       - FLYWAY_URL=${FLYWAY_URL}
 
-  # manager:
-  #   build:
-  #     context: ./src/manager
-  #     dockerfile: Dockerfile
-  #   image: manager
-  #   restart: "no"
-  #   volumes:
-  #     - ./src/manager/:/app
-  #   depends_on:
-  #     - flyway
-  #     - redis-streams
-  #     - simulator
-  #   environment:
-  #     - WORKER_COUNT=${WORKER_COUNT}
-  #   deploy:
-  #     replicas: ${MANAGER_COUNT}
-
   simulator:
     build:
       context: ./src/simulator
@@ -95,6 +76,8 @@ services:
     environment:
       - MESSAGE_MULTIPLIER=${MESSAGE_MULTIPLIER}
       - WORKER_COUNT=${WORKER_COUNT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
   grafana:
     container_name: grafana
@@ -102,8 +85,14 @@ services:
     restart: on-failure
     ports:
       - 9999:3000
-    env_file:
-      - .env # Change this to take the actual envvars, not just a file with a large number of envvars. Giving all envvars makes it hard to know which vars are important
+    environment:
+      - PGDATABASE=${PGDATABASE}
+      - GF_DATABASE_TYPE=${GF_DATABASE_TYPE}
+      - GF_DATABASE_HOST=${GF_DATABASE_HOST}
+      - GF_DATABASE_NAME=${GF_DATABASE_NAME}
+      - GF_DATABASE_USER=${GF_DATABASE_USER}
+      - GF_DATABASE_PASSWORD=${GF_DATABASE_PASSWORD}
+      - GF_DATABASE_SSL_MODE=${GF_DATABASE_SSL_MODE}
     depends_on:
       database:
         condition: service_started
@@ -113,3 +102,21 @@ services:
       - ./src/dashboard/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./src/dashboard/provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./src/dashboard/grafana.ini:/etc/grafana/grafana.ini
+
+
+  # manager:
+  #   build:
+  #     context: ./src/manager
+  #     dockerfile: Dockerfile
+  #   image: manager
+  #   restart: "no"
+  #   volumes:
+  #     - ./src/manager/:/app
+  #   depends_on:
+  #     - flyway
+  #     - redis-streams
+  #     - simulator
+  #   environment:
+  #     - WORKER_COUNT=${WORKER_COUNT}
+  #   deploy:
+  #     replicas: ${MANAGER_COUNT}
