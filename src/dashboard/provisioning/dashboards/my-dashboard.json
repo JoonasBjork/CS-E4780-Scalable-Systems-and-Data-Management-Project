@@ -61,12 +61,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
-              },
-              {
                 "color": "red",
-                "value": 80
+                "value": null
               }
             ]
           }
@@ -149,10 +145,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -189,7 +181,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select \r\n  COUNT(message_count)\r\nfrom indicators \r\nwhere created_at between $__timeFrom() and $__timeTo() ",
+          "rawSql": "select \r\n  SUM(message_count)\r\nfrom indicators \r\nwhere created_at between $__timeFrom() and $__timeTo() ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -346,10 +338,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
