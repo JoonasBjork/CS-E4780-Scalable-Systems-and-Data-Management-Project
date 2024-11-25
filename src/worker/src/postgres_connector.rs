@@ -7,7 +7,7 @@ use std::thread;
 use std::time::Duration;
 
 pub fn create_postgres_client(
-    connection_string: String,
+    connection_string: &str,
     retries: u64,
     wait_time_in_seconds: u64,
 ) -> Result<Client, Error> {
