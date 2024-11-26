@@ -7,7 +7,7 @@ from typing import Generator, Optional, Dict
 import itertools
 import os
 from itertools import islice
-
+import pandas as pd
 
 from const import *
 
@@ -51,65 +51,53 @@ def csv_row_to_redis(row: list[str], exact_time: Optional[datetime]) -> Dict[str
         'date': row[DATE_OFFSET]
     }
 
-def read_from_offset(filename: str, start_offset: int, buffer_size: int = 128) -> Generator[str, None, None]:
-    """Generator to read from a specific offset in the file and yield lines."""
-    with open(filename, 'r') as file:
-        # Seek to the starting offset
-        file.seek(start_offset)
-
-        # Temporary buffer to hold chunks of file data
-        buffer = ''
-
-        reader = csv.reader(iter(file))
-        
-        while True:
-            # Read a chunk from the file
-            chunk = file.read(buffer_size)
-            
-            if not chunk:
-                break  # End of file reached
-            
-            # Add the chunk to the buffer
-            buffer += chunk
-
-            # Process the buffer, line by line
-            while '\n' in buffer:
-                # line, buffer = buffer.split('\n', 1)  # Split at the first newline
-
-                row = next(reader)
-                yield row  # Yield the line, stripped of any extra whitespace
-
-        # Yield any remaining data in the buffer that wasn't followed by a newline
-        if buffer:
-            row = next(reader)
-            yield row
-
-# def read_from_offset(filename: str, start_offset: int, chunk_size: int = 20000) -> Generator[str, None, None]:
+# def read_from_offset(filename: str, start_offset: int, buffer_size: int = 128) -> Generator[str, None, None]:
 #     """Generator to read from a specific offset in the file and yield lines."""
-#     print(start_offset)
 #     with open(filename, 'r') as file:
 #         # Seek to the starting offset
 #         file.seek(start_offset)
 
-#         if start_offset > 0:
-#             file.readline()
+#         # Temporary buffer to hold chunks of file data
+#         buffer = ''
 
-#         reader = csv.reader(file)
+#         reader = csv.reader(iter(file))
         
 #         while True:
-#             rows = []
-#             for _ in range(chunk_size):
-#                 try:
-#                     row = next(reader)
-#                     rows.append(row)
-#                 except StopIteration:
-#                     break
+#             # Read a chunk from the file
+#             chunk = file.read(buffer_size)
+            
+#             if not chunk:
+#                 break  # End of file reached
+            
+#             # Add the chunk to the buffer
+#             buffer += chunk
 
-#             if not rows:
-#                 break
-#             for row in rows:
-#                 yield rows
-    
+#             # Process the buffer, line by line
+#             while '\n' in buffer:
+#                 # line, buffer = buffer.split('\n', 1)  # Split at the first newline
+
+#                 row = next(reader)
+#                 yield row  # Yield the line, stripped of any extra whitespace
+
+#         # Yield any remaining data in the buffer that wasn't followed by a newline
+#         if buffer:
+#             row = next(reader)
+#             yield row
+
+def read_batch_from_offset(filename: str, start_offset: int, chunk_size: int = 10000) -> Generator[str, None, None]:
+    """Generator to read from a specific offset in the file and yield lines."""
+    file = open(filename, 'r')
+    file.seek(start_offset)
+    if start_offset:
+        print(file.readline())
+    chunks = pd.read_csv(
+        file,
+        skip_blank_lines=False,
+        chunksize=chunk_size
+    )
+    for chunk in chunks:
+        for _, line in chunk.iterrows():
+            yield line.tolist()
 
 def get_next_n(iterator, n):
     return list(islice(iterator, n))
@@ -118,9 +106,9 @@ def parser_run(csv_file: str, queue) -> None:
     try:
 
         # Start the file from 15:00
-        generator = read_from_offset(csv_file, FILE_OFFSET_BYTES)
+        generator = read_batch_from_offset(csv_file, FILE_OFFSET_BYTES)
         first_record = next(generator)
-        # print("Got first record:", first_record)
+        print("Got first record:", first_record)
         while first_record[TIME_OFFSET] == '':
             first_record = next(generator)
         print("First record:", first_record)

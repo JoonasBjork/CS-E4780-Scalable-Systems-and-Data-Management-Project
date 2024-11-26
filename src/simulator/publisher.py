@@ -24,6 +24,7 @@ def calculate_stream_name(s, worker_count):
 
 def publisher_run_redis(queue) -> None:
     """ The publisher will emit event through redis stream"""
+    print(MESSAGE_MULTIPLIER)
     try:
         stream_names = {}
         print("[PUBLISHER] Publisher started")
@@ -44,8 +45,8 @@ def publisher_run_redis(queue) -> None:
                 item = queue.recv()
                 items.append(item)
 
-            if iter % 1000 < MESSAGE_MULTIPLIER:
-                print("[PUBLISHER] iter:", iter)
+            # if iter % 1000 < MESSAGE_MULTIPLIER:
+            #     print("[PUBLISHER] iter:", iter)
                 # print("Item:", item)
                 # print("Number of items in the queue:", queue.qsize())
 
@@ -70,9 +71,9 @@ def publisher_run_redis(queue) -> None:
                     # redis_client.xadd(stream_name, item)
                     pipeline.xadd(stream_name, item)
             pipeline.execute()      
-            if len(items) != 0:
-                print(f"Pipeline execute with {len(items)} in {time.time() - start}")      
-                print("[PUBLISHER] each records takes: ", time.time() - start)
+            # if len(items) != 0:
+            #     print(f"Pipeline execute with {len(items)} in {time.time() - start}")      
+            #     print("[PUBLISHER] each records takes: ", time.time() - start)
     except KeyboardInterrupt:
         return
     
