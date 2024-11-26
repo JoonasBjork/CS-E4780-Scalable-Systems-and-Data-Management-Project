@@ -84,6 +84,33 @@ def read_from_offset(filename: str, start_offset: int, buffer_size: int = 128) -
             row = next(reader)
             yield row
 
+# def read_from_offset(filename: str, start_offset: int, chunk_size: int = 20000) -> Generator[str, None, None]:
+#     """Generator to read from a specific offset in the file and yield lines."""
+#     print(start_offset)
+#     with open(filename, 'r') as file:
+#         # Seek to the starting offset
+#         file.seek(start_offset)
+
+#         if start_offset > 0:
+#             file.readline()
+
+#         reader = csv.reader(file)
+        
+#         while True:
+#             rows = []
+#             for _ in range(chunk_size):
+#                 try:
+#                     row = next(reader)
+#                     rows.append(row)
+#                 except StopIteration:
+#                     break
+
+#             if not rows:
+#                 break
+#             for row in rows:
+#                 yield rows
+    
+
 def get_next_n(iterator, n):
     return list(islice(iterator, n))
 
@@ -96,7 +123,7 @@ def parser_run(csv_file: str, queue) -> None:
         # print("Got first record:", first_record)
         while first_record[TIME_OFFSET] == '':
             first_record = next(generator)
-            # print("First record:", first_record)
+        print("First record:", first_record)
 
         time_shift = datetime.now() - parse_time(first_record[TIME_OFFSET])
 
@@ -109,7 +136,6 @@ def parser_run(csv_file: str, queue) -> None:
             while True:
                 iter += 1
                 record = next(generator)
-
                 if record[TIME_OFFSET] == '':
                     queue.send(csv_row_to_redis(record, None))
                     continue
@@ -130,6 +156,8 @@ def parser_run(csv_file: str, queue) -> None:
                     # print("Record:", record)
 
                 queue.send(csv_row_to_redis(record, timestamp))
+                # queue.put(csv_rsow_to_redis(record, timestamp))
+                
         except StopIteration:
             return
     except KeyboardInterrupt:
