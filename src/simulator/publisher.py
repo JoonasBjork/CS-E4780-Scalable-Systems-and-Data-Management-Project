@@ -58,12 +58,6 @@ def publisher_run_redis(queue) -> None:
                     stream_names[item_id] = calculate_stream_name(item_id, WORKER_COUNT)
                 
                 stream_name = stream_names[item_id]
-                
-                if item["date"]:
-                    item["date"] = datetime.now().strftime("%d-%m-%Y")
-                if item["time"]:
-                    item["time"] = datetime.now().strftime("%H:%M:%S.%f")
-
                
                 iter += MESSAGE_MULTIPLIER
                     
