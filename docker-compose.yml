@@ -109,7 +109,7 @@ services:
       - GF_DATABASE_PASSWORD=${GF_DATABASE_PASSWORD}
       - GF_DATABASE_SSL_MODE=${GF_DATABASE_SSL_MODE}
       # Configuration envvars
-      - WORKER_WINDOW_SIZE_SECONDS=${WORKER_WINDOW_SIZE_SECONDS}
+      - WORKER_WINDOW_SIZE_SECONDS=${WORKER_WINDOW_SIZE_SECONDS} # This is pulled in the grafana.conf file, which sets another variable, which can be referred to in the migration files. Then the data is pushed into the environment_variables table and that is fetched by grafana :)
     depends_on:
       database:
         condition: service_started
