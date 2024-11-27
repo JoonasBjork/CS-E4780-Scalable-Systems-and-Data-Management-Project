@@ -65,11 +65,15 @@ services:
       - database
     volumes:
       - ./src/flyway/sql/:/flyway/sql
+      - ./src/flyway/flyway.conf:/flyway/conf/flyway.conf
     command: -connectRetries=60 -baselineOnMigrate=true migrate
     environment:
       - FLYWAY_USER=${FLYWAY_USER}
       - FLYWAY_PASSWORD=${FLYWAY_PASSWORD}
       - FLYWAY_URL=${FLYWAY_URL}
+      # This is a hack for the migration file to be able to find the envvar:
+      # - flyway.placeholders.worker_window_size_seconds=${WORKER_WINDOW_SIZE_SECONDS}
+      - WORKER_WINDOW_SIZE_SECONDS=${WORKER_WINDOW_SIZE_SECONDS}
 
   simulator:
     build:
@@ -104,6 +108,8 @@ services:
       - GF_DATABASE_USER=${GF_DATABASE_USER}
       - GF_DATABASE_PASSWORD=${GF_DATABASE_PASSWORD}
       - GF_DATABASE_SSL_MODE=${GF_DATABASE_SSL_MODE}
+      # Configuration envvars
+      - WORKER_WINDOW_SIZE_SECONDS=${WORKER_WINDOW_SIZE_SECONDS}
     depends_on:
       database:
         condition: service_started

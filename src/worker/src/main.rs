@@ -21,6 +21,7 @@ fn main() -> Result<(), RedisError> {
     // ********** Retrieving environment variables **********
 
     let replica_index = get_int_envvar("REPLICA_INDEX", None).unwrap();
+    let worker_window_size_seconds = get_int_envvar("WORKER_WINDOW_SIZE_SECONDS", None).unwrap();
 
     let pg_user = get_str_envvar("PGUSER", None).unwrap();
     let pg_password = get_str_envvar("PGPASSWORD", None).unwrap();
@@ -249,8 +250,10 @@ fn main() -> Result<(), RedisError> {
         let mut postgres_client = create_postgres_client(&ema_postgre_addr, 3, 10)
             .expect("Ema consumer was not able to connect to Postgres");
 
+        let worker_window = worker_window_size_seconds as u64;
+
         loop {
-            thread::sleep(Duration::new(10, 0));
+            thread::sleep(Duration::new(worker_window, 0));
             // println!("DEBUG WORKER EMA_CONSUMER TAKING READ LOCK");
             let mut quant_indicators: Vec<(String, QuantitativeIndicator)> = Vec::new();
 

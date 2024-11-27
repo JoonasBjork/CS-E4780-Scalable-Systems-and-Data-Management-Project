@@ -215,7 +215,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 9,
+        "w": 7,
         "x": 6,
         "y": 2
       },
@@ -236,7 +236,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select \r\n  symbol, \r\n  created_at as time, \r\n  ema_38 as \"EMA 38\", \r\n  ema_100 as \"EMA 100\", \r\n  last_trade_timestamp as \"Most recent trade\", \r\n  message_count as \"Events in last window\", \r\n  average_latency_ms as \"Average latency (ms)\" \r\nfrom indicators \r\nwhere \r\n  bullish=true \r\n  AND created_at > NOW() - INTERVAL '10 seconds' \r\nORDER BY symbol;",
+          "rawSql": "select \r\n  symbol, \r\n  created_at as time, \r\n  ema_38 as \"EMA 38\", \r\n  ema_100 as \"EMA 100\", \r\n  last_trade_timestamp as \"Most recent trade\", \r\n  message_count as \"Events in last window\", \r\n  average_latency_ms as \"Average latency (ms)\" \r\nfrom indicators \r\nwhere \r\n  bullish=true \r\n  AND created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds' \r\nORDER BY symbol;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -271,8 +271,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 9,
-        "x": 15,
+        "w": 7,
+        "x": 13,
         "y": 2
       },
       "id": 5,
@@ -296,7 +296,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select \r\n  symbol, \r\n  created_at as time, \r\n  ema_38 as \"EMA 38\", \r\n  ema_100 as \"EMA 100\", \r\n  last_trade_timestamp as \"Most recent trade\", \r\n  message_count as \"Events in last window\", \r\n  average_latency_ms as \"Average latency (ms)\" \r\nfrom indicators \r\nwhere \r\n  bearish=true \r\n  AND created_at > NOW() - INTERVAL '10 seconds'\r\nORDER BY symbol;",
+          "rawSql": "select \r\n  symbol, \r\n  created_at as time, \r\n  ema_38 as \"EMA 38\", \r\n  ema_100 as \"EMA 100\", \r\n  last_trade_timestamp as \"Most recent trade\", \r\n  message_count as \"Events in last window\", \r\n  average_latency_ms as \"Average latency (ms)\" \r\nfrom indicators \r\nwhere \r\n  bearish=true \r\n  AND created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds'\r\nORDER BY symbol;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -318,6 +318,66 @@
         }
       ],
       "title": "Bearish stocks",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "de39cu9bys6wwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 20,
+        "y": 2
+      },
+      "id": 10,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "de39cu9bys6wwf"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "select \r\n  symbol,\r\n  created_at as time\r\nfrom indicators\r\nwhere \r\n  message_count > 0\r\n  AND created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds'\r\nORDER BY symbol;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Recently traded",
       "type": "logs"
     },
     {
@@ -374,7 +434,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  message_count\r\nFROM \r\n  indicators\r\nWHERE\r\n  symbol = '555200.ETR' AND\r\n  created_at > NOW() - INTERVAL '10 seconds' \r\nLIMIT \r\n  1;",
+          "rawSql": "SELECT\r\n  message_count\r\nFROM \r\n  indicators\r\nWHERE\r\n  symbol = '555200.ETR' AND\r\n  created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds' \r\nLIMIT \r\n  1;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -461,7 +521,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT \r\n  AVG(latency_ms) / 1000 AS latency\r\nFROM (\r\n  SELECT average_latency_ms AS latency_ms\r\n  FROM indicators\r\n  WHERE \r\n    created_at > NOW() - INTERVAL '10 seconds'\r\n    AND message_count > 0\r\n  LIMIT 100\r\n) AS limited_data;",
+          "rawSql": "SELECT \r\n  AVG(latency_ms) / 1000 AS latency\r\nFROM (\r\n  SELECT average_latency_ms AS latency_ms\r\n  FROM indicators\r\n  WHERE \r\n    created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds'\r\n    AND message_count > 0\r\n  LIMIT 100\r\n) AS limited_data;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -483,7 +543,7 @@
           "table": "indicators"
         }
       ],
-      "title": "Latency",
+      "title": "Average latency",
       "type": "stat"
     },
     {
@@ -745,6 +805,7 @@
     }
   ],
   "preload": false,
+  "refresh": "5s",
   "schemaVersion": 40,
   "tags": [],
   "templating": {
@@ -767,6 +828,20 @@
         "refresh": 1,
         "regex": "",
         "type": "query"
+      },
+      {
+        "current": {
+          "text": "20",
+          "value": "20"
+        },
+        "definition": "SELECT value FROM environment_variables WHERE key = 'WORKER_WINDOW_SIZE_SECONDS';",
+        "description": "",
+        "name": "WORKER_WINDOW_SIZE_SECONDS",
+        "options": [],
+        "query": "SELECT value FROM environment_variables WHERE key = 'WORKER_WINDOW_SIZE_SECONDS';",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
       }
     ]
   },
@@ -774,7 +849,6 @@
     "from": "now-1h",
     "to": "now"
   },
-  "refresh": "5s",
   "timepicker": {},
   "timezone": "browser",
   "title": "my-dashboard",
