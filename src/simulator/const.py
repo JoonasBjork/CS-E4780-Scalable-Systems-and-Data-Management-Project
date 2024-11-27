@@ -41,7 +41,6 @@ TIME_OFFSET = 23
 DATE_OFFSET = 26
 
 WORKER_COUNT = get_int_envvar("WORKER_COUNT", 1)
-MESSAGE_MULTIPLIER = get_int_envvar("MESSAGE_MULTIPLIER", 1)
 REDIS_HOST = get_str_envvar("REDIS_HOST")
 REDIS_PORT = get_str_envvar("REDIS_PORT")
 PUBLISHER_COUNT = get_int_envvar("PUBLISHER_COUNT", 1)

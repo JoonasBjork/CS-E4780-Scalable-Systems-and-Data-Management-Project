@@ -32,6 +32,8 @@ services:
       # Redis client envvars
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_HOST=${REDIS_HOST}
+      # Other envvars for configuration
+      - WORKER_WINDOW_SIZE_SECONDS=${WORKER_WINDOW_SIZE_SECONDS}
     deploy:
       replicas: ${WORKER_COUNT} # Retrieved automtaically from .env file
       resources:
@@ -84,7 +86,6 @@ services:
     deploy:
       replicas: ${SIMULATOR_COUNT}
     environment:
-      - MESSAGE_MULTIPLIER=${MESSAGE_MULTIPLIER}
       - WORKER_COUNT=${WORKER_COUNT}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
@@ -112,8 +113,6 @@ services:
       - ./src/dashboard/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./src/dashboard/provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./src/dashboard/grafana.ini:/etc/grafana/grafana.ini
-
-
   # manager:
   #   build:
   #     context: ./src/manager
