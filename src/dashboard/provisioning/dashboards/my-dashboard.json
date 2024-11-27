@@ -771,9 +771,10 @@
     ]
   },
   "time": {
-    "from": "2024-11-07T23:39:59.947Z",
-    "to": "2024-11-20T19:24:45.328Z"
+    "from": "now-1h",
+    "to": "now"
   },
+  "refresh": "5s",
   "timepicker": {},
   "timezone": "browser",
   "title": "my-dashboard",
