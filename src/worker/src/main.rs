@@ -1,7 +1,9 @@
 mod data_entry;
+mod envvar_utils;
 mod postgres_connector;
 mod quantitative_indicators;
 
+use envvar_utils::{get_int_envvar, get_str_envvar};
 use postgres_connector::{
     create_postgres_client, insert_alerts, insert_indicators, wait_for_migration,
 };
@@ -10,33 +12,36 @@ use redis::{Commands, RedisError, RedisResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::time::Duration;
-use std::{env, process, thread};
+use std::{process, thread};
 
 use data_entry::DataEntry;
 use quantitative_indicators::QuantitativeIndicator;
 
 fn main() -> Result<(), RedisError> {
-    // ********** Setting up the chosen stream **********
+    // ********** Retrieving environment variables **********
 
-    let replica_index: i32 = match env::var("REPLICA_INDEX") {
-        Ok(value) => match value.parse::<i32>() {
-            Ok(int) => int,
-            Err(_) => {
-                eprintln!("Error: REPLICA_INDEX must be a valid integer.");
-                process::exit(1);
-            }
-        },
-        Err(_) => {
-            eprintln!("Error: REPLICA_INDEX environment variable is not set.");
-            process::exit(1);
-        }
-    };
+    let replica_index = get_int_envvar("REPLICA_INDEX", None).unwrap();
+
+    let pg_user = get_str_envvar("PGUSER", None).unwrap();
+    let pg_password = get_str_envvar("PGPASSWORD", None).unwrap();
+    let pg_host = get_str_envvar("PGHOST", None).unwrap();
+    let pg_port = get_int_envvar("PGPORT", None).unwrap();
+    let pg_database = get_str_envvar("PGDATABASE", None).unwrap();
+
+    let redis_port = get_int_envvar("REDIS_PORT", None).unwrap();
+    let redis_host = get_str_envvar("REDIS_HOST", None).unwrap();
+
+    let postgre_addr = format!(
+        "postgres://{}:{}@{}:{}/{}",
+        pg_user, pg_password, pg_host, pg_port, pg_database
+    );
+    let redis_addr = format!("redis://{}:{}/", redis_host, redis_port);
 
     let stream_key = format!("s{}", replica_index);
 
     // ********** Opening a Redis Client connection **********
 
-    let redis_client = redis::Client::open("redis://redis-streams:6379/")?;
+    let redis_client = redis::Client::open(redis_addr)?;
     let mut redis_con = redis_client.get_connection()?;
     let redis_options = StreamReadOptions::default().block(5000).count(10); // In general, the data comes in slow enough that only one message is retrieved at a time.
 
@@ -44,11 +49,7 @@ fn main() -> Result<(), RedisError> {
 
     // ********** Checking that migration has been applied to db **********
 
-    let initial_postgres_client_res = create_postgres_client(
-        "postgres://username:password@database:5432/database".to_string(),
-        3,
-        10,
-    );
+    let initial_postgres_client_res = create_postgres_client(&postgre_addr, 3, 10);
 
     let mut initial_postgres_client = match initial_postgres_client_res {
         Ok(c) => c,
@@ -130,7 +131,7 @@ fn main() -> Result<(), RedisError> {
                                         quant_indicator_lock.lock().unwrap();
 
                                     // println!("Updating qi dataentry: {}", record_object);
-                                    quantitative_indicator.update_most_recent_value(
+                                    quantitative_indicator.receive_new_value(
                                         record_object.last.unwrap(),
                                         record_object.timestamp.unwrap(),
                                     );
@@ -201,14 +202,11 @@ fn main() -> Result<(), RedisError> {
     // ********** Alert consumer thread **********
 
     // The alert consumer consumes error events as they get added to that
+    let alert_postgre_addr = postgre_addr.clone();
     let alert_consumer_data = Arc::clone(&alert_data);
     let alert_consumer = thread::spawn(move || {
-        let mut postgres_client = create_postgres_client(
-            "postgres://username:password@database:5432/database".to_string(),
-            3,
-            10,
-        )
-        .expect("Alert consumer was not able to connect to Postgres");
+        let mut postgres_client = create_postgres_client(&alert_postgre_addr, 3, 10)
+            .expect("Alert consumer was not able to connect to Postgres");
 
         loop {
             thread::sleep(Duration::new(1, 0));
@@ -245,14 +243,11 @@ fn main() -> Result<(), RedisError> {
 
     // ********** Ema consumer thread **********
 
+    let ema_postgre_addr = postgre_addr.clone();
     let ema_consumer_data = Arc::clone(&ema_data);
     let ema_consumer: thread::JoinHandle<_> = thread::spawn(move || {
-        let mut postgres_client = create_postgres_client(
-            "postgres://username:password@database:5432/database".to_string(),
-            3,
-            10,
-        )
-        .expect("Ema consumer was not able to connect to Postgres");
+        let mut postgres_client = create_postgres_client(&ema_postgre_addr, 3, 10)
+            .expect("Ema consumer was not able to connect to Postgres");
 
         loop {
             thread::sleep(Duration::new(10, 0));
@@ -280,15 +275,18 @@ fn main() -> Result<(), RedisError> {
 
             // println!("QUANT INDICATORS: {:?}", quant_indicators);
 
-            let insert_indicators_res = insert_indicators(&mut postgres_client, &quant_indicators);
-            match insert_indicators_res {
-                Ok(changed_lines) => {
-                    println!(
-                        "EMA consumer added {} lines to postgre indicators",
-                        changed_lines
-                    )
+            // The postgre query can't handle the number of parameters - need to split the request into multiple parts
+            for chunk in quant_indicators.chunks(3000) {
+                let insert_indicators_res = insert_indicators(&mut postgres_client, chunk);
+                match insert_indicators_res {
+                    Ok(changed_lines) => {
+                        println!(
+                            "EMA consumer added {} lines to postgre indicators",
+                            changed_lines
+                        )
+                    }
+                    Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
                 }
-                Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
             }
         }
     });
