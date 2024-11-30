@@ -43,7 +43,7 @@ services:
 
   database:
     container_name: ${PGHOST}
-    image: timescale/timescaledb:latest-pg16
+    image: timescale/timescaledb:latest-pg17
     restart: "no"
     environment:
       # Required to launch the PSQL server
@@ -60,7 +60,7 @@ services:
       - 9997:5432
 
   flyway:
-    image: flyway/flyway:9.11.0-alpine
+    image: flyway/flyway:11.0-alpine
     depends_on:
       - database
     volumes:
