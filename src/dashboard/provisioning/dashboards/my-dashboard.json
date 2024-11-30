@@ -257,7 +257,7 @@
           }
         }
       ],
-      "title": "Bullish stocks",
+      "title": "Bullish stocks in latest window",
       "type": "logs"
     },
     {
@@ -317,7 +317,7 @@
           }
         }
       ],
-      "title": "Bearish stocks",
+      "title": "Bearish stocks in latest window",
       "type": "logs"
     },
     {
@@ -434,7 +434,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  message_count\r\nFROM \r\n  indicators\r\nWHERE\r\n  symbol = '555200.ETR' AND\r\n  created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds' \r\nLIMIT \r\n  1;",
+          "rawSql": "SELECT\r\n  message_count\r\nFROM \r\n  indicators\r\nWHERE\r\n  symbol = '$stock_id' AND\r\n  created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds' \r\nLIMIT \r\n  1;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -502,9 +502,9 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "mean"
           ],
-          "fields": "",
+          "fields": "/^mean_latency$/",
           "values": false
         },
         "showPercentChange": false,
@@ -521,7 +521,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT \r\n  AVG(latency_ms) / 1000 AS latency\r\nFROM (\r\n  SELECT average_latency_ms AS latency_ms\r\n  FROM indicators\r\n  WHERE \r\n    created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds'\r\n    AND message_count > 0\r\n  LIMIT 100\r\n) AS limited_data;",
+          "rawSql": "-- SELECT \r\n--   AVG(latency_ms) / 1000 AS latency\r\n-- FROM (\r\n--   SELECT average_latency_ms AS latency_ms\r\n--   FROM indicators\r\n--   WHERE \r\n--     created_at > NOW() - INTERVAL '$WORKER_WINDOW_SIZE_SECONDS seconds'\r\n--     AND message_count > 0\r\n--   LIMIT 100\r\n-- ) AS limited_data;\r\n\r\nSELECT \r\n    time_bucket('$WORKER_WINDOW_SIZE_SECONDS seconds' , created_at) AS bucket,\r\n    AVG(average_latency_ms)/1000 AS mean_latency\r\nFROM \r\n    indicators\r\nWHERE \r\n    created_at BETWEEN $__timeFrom() AND $__timeTo() \r\nGROUP BY \r\n    bucket\r\nORDER BY \r\n    bucket;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -541,6 +541,35 @@
             "limit": 50
           },
           "table": "indicators"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "de39cu9bys6wwf"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Average latency",
