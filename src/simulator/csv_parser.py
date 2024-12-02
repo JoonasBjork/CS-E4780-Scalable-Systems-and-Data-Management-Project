@@ -8,6 +8,9 @@ import itertools
 import os
 from itertools import islice
 import pandas as pd
+# import pyarrow.csv as pacsv
+# import threading
+# import queue
 
 from const import *
 
@@ -56,60 +59,83 @@ def read_batch_from_offset(filename: str, start_offset: int, chunk_size: int = 1
         chunksize=chunk_size
     )
     for chunk in chunks:
-        for _, line in chunk.iterrows():
-            yield line.tolist()
+        yield chunk.iterrows()
 
-def get_next_n(iterator, n):
-    return list(islice(iterator, n))
+
+# def read_csv_task(data_queue: queue.Queue, event: threading.Event, generator: Generator):
+#     while True:
+#         # Wait for an item to be pulled from the queue
+#         item = data_queue.get()
+#         print(f"Processing item: {item}")
+
+#         # Simulate some work being done on the item
+#         time.sleep(1)  # Simulate processing time
+        
+#         # After processing, the worker thread will wait until the queue is empty
+#         if data_queue.empty():
+#             print("Queue is empty, adding a new item...")
+#             data_queue.put("New Item")  # Add an item to the queue
+#         else:
+#             print("Waiting for the next item to be processed...")
+
+#         # Mark the task as done
+#         data_queue.task_done()
 
 def parser_run(csv_file: str, queue) -> None:
     try:
-
         # Start the file from 15:00
         generator = read_batch_from_offset(csv_file, FILE_OFFSET_BYTES)
-        first_record = next(generator)
-        while first_record[TIME_OFFSET] == '':
-            first_record = next(generator)
+        
+        # print("FOUND FIRST RECORD:", first_record)
 
-        time_shift = datetime.now() - parse_time(first_record[TIME_OFFSET])
+        good_record_found = False # Needed for exiting the outer loop
+        while not good_record_found:
+            records = next(generator)
+            for _, record in records:
+                record = record.tolist()
+                if record[TIME_OFFSET] != '':
+                    time_shift = datetime.now() - parse_time(record[TIME_OFFSET])
+                    print("Found first working record", record)
+                    good_record_found = True # Make sure to exit the outer loop
+                    break
 
 
         print("[PARSER] Starting to add items to queue")
-        print("[PARSER] first_record", first_record)
 
+        # We can still use the first batch of records even though it wasn't 
         try:
             iter = 0
             while True:
-                iter += 1
-                record = next(generator)
-                if pd.isna(record[TIME_OFFSET]):
-                    queue.send(csv_row_to_redis(record, None))
-                    continue
+                for _, record in records:
+                    record = record.tolist()
 
-                # print("THIS IS THE TIME_OFFSET:", record[TIME_OFFSET])
-                # record_timestamp = 
-                sleep_duration: float = (parse_time(record[TIME_OFFSET]) - (datetime.now() - time_shift)).total_seconds()
-                # print("[PARSER] found sleep duration")
+                    iter += 1
+                    if pd.isna(record[TIME_OFFSET]):
+                        queue.send(csv_row_to_redis(record, None))
+                        continue
 
-                if sleep_duration > 0.1:
-                    # print("[PARSER] sleeping for", sleep_duration, "On record with timestamp", parse_time(record[TIME_OFFSET]))
-                    time.sleep(sleep_duration)
+                    sleep_duration: float = (parse_time(record[TIME_OFFSET]) - (datetime.now() - time_shift)).total_seconds()
+                    # print("[PARSER] found sleep duration")
 
-                # Add the records with the current time
-                current_time: datetime = datetime.now()
+                    if sleep_duration > 0.1:
+                        # print("[PARSER] sleeping for", sleep_duration, "On record with timestamp", parse_time(record[TIME_OFFSET]))
+                        time.sleep(sleep_duration)
 
-                # record[TIME_OFFSET] = current_time.strftime("%H:%M:%S.%f")
-                record[DATE_OFFSET] = current_time.strftime("%d-%m-%Y")
+                    # Add the records with the current time
+                    current_time: datetime = datetime.now()
 
-                if iter % 1000 == 0:
-                    print("[PARSER] iter:", iter)
-                    print("[PARSER] Parser lag:", -sleep_duration, "s")
-                    # print("Record:", record)
-                
+                    record[DATE_OFFSET] = current_time.strftime("%d-%m-%Y")
 
-                queue.send(csv_row_to_redis(record, current_time))
-                # queue.put(csv_rsow_to_redis(record, timestamp))
-                
+                    if iter % 1000 == 0:
+                        print("[PARSER] iter:", iter)
+                        print("[PARSER] Parser lag:", -sleep_duration, "s")
+                    
+
+                    queue.send(csv_row_to_redis(record, current_time))
+                # out_start = time.time()
+                records = next(generator)
+                # out_end = time.time()
+                # print("Generator call took:", out_end - out_start, "Got len(records):", len(records))
         except StopIteration:
             return
     except KeyboardInterrupt:
@@ -157,3 +183,28 @@ def parser_run(csv_file: str, queue) -> None:
 #         if buffer:
 #             row = next(reader)
 #             yield row
+
+
+
+# def seek_to_next_line(file):
+#     """Move the file pointer to the start of the next line."""
+#     while True:
+#         char = file.read(1)
+#         if char == b'\n' or char == b'':
+#             break
+
+
+# def read_batch_with_pyarrow(filename: str, start_offset: int, chunk_size: int = 10000) -> Generator[list, None, None]:
+#     with open(filename, 'rb') as f:
+#         print("FIRST SEEK")
+#         f.seek(start_offset)
+#         print("SEEKING TO NEXT LINE")
+#         seek_to_next_line(f)
+#         print("READING CSV") 
+#         reader = pacsv.read_csv( # This line doesn't work as it pulls the entire file into memory :(
+#             f,
+#             read_options=pacsv.ReadOptions(block_size=chunk_size)
+#         )
+#         print("YIELDING CSV")
+#         for batch in reader.to_batches():
+#             yield batch.to_pandas().values.tolist() # Return the full batch at once to reduce function calls

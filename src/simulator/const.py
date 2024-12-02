@@ -28,11 +28,11 @@ def get_int_envvar(envvar_name: str, default_value: Optional[int]) -> int:
     except Exception as e:
         raise RuntimeError(f"Unexpected error in get_int_envvar: {e}")
 
-CSV_FILE = '/data/debs2022-gc-trading-day-08-11-21.csv'
-FILE_OFFSET_BYTES = 3100000000
+# CSV_FILE = '/data/debs2022-gc-trading-day-08-11-21.csv'
+# FILE_OFFSET_BYTES = 3100000000
 # When reading different files, use different offets
-# CSV_FILE = '/data/1_million_at_1_million_messages_per_5min.csv'
-# FILE_OFFSET_BYTES = 1 
+CSV_FILE = '/data/1_million_at_2_million_messages_per_5min.csv'
+FILE_OFFSET_BYTES = 1 
 
 ID_OFFSET = 0
 SEC_TYPE_OFFSET = 1

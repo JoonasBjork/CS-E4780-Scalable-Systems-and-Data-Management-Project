@@ -23,7 +23,7 @@ num_columns = len(header)
 # We will test the system with 2 million records in a 5 min period
 
 # 2 million in a 5 min period is 6667 messages per second or one message per 0,00015 seconds. Therefore, we increment the timedate by 0,00015
-messages_per_5_min = 1_000_000
+messages_per_5_min = 4_000_000 # Maximum seen in the data is 30 000 messages per second
 messages_per_second = messages_per_5_min / 300
 second_per_message = 1 / messages_per_second
 
