@@ -9,8 +9,8 @@ import os
 from itertools import islice
 import pandas as pd
 # import pyarrow.csv as pacsv
-# import threading
-# import queue
+import threading
+import queue
 
 from const import *
 
@@ -62,26 +62,23 @@ def read_batch_from_offset(filename: str, start_offset: int, chunk_size: int = 1
         yield chunk.iterrows()
 
 
-# def read_csv_task(data_queue: queue.Queue, event: threading.Event, generator: Generator):
-#     while True:
-#         # Wait for an item to be pulled from the queue
-#         item = data_queue.get()
-#         print(f"Processing item: {item}")
-
-#         # Simulate some work being done on the item
-#         time.sleep(1)  # Simulate processing time
+def read_csv_task(data_queue: queue.Queue, event: threading.Event, generator: Generator):
+    while True:
+        print("Waiting in read_csv_task")
         
-#         # After processing, the worker thread will wait until the queue is empty
-#         if data_queue.empty():
-#             print("Queue is empty, adding a new item...")
-#             data_queue.put("New Item")  # Add an item to the queue
-#         else:
-#             print("Waiting for the next item to be processed...")
+        wait_start = time.time()
+        event.wait()
+        wait_end = time.time()
+        print("Read_csv waited for:", wait_end - wait_start)
 
-#         # Mark the task as done
-#         data_queue.task_done()
+        event.clear()
 
-def parser_run(csv_file: str, queue) -> None:
+        records_iterator = next(generator)
+        data_queue.put(records_iterator)
+
+
+
+def parser_run(csv_file: str, pipe) -> None:
     try:
         # Start the file from 15:00
         generator = read_batch_from_offset(csv_file, FILE_OFFSET_BYTES)
@@ -99,6 +96,11 @@ def parser_run(csv_file: str, queue) -> None:
                     good_record_found = True # Make sure to exit the outer loop
                     break
 
+        data_queue: queue.Queue = queue.Queue()
+        csv_event = threading.Event()
+
+        csv_read_thread = threading.Thread(target=read_csv_task, args=(data_queue, csv_event, generator,))
+        csv_read_thread.start()
 
         print("[PARSER] Starting to add items to queue")
 
@@ -106,12 +108,13 @@ def parser_run(csv_file: str, queue) -> None:
         try:
             iter = 0
             while True:
+                csv_event.set()
                 for _, record in records:
                     record = record.tolist()
 
                     iter += 1
                     if pd.isna(record[TIME_OFFSET]):
-                        queue.send(csv_row_to_redis(record, None))
+                        pipe.send(csv_row_to_redis(record, None))
                         continue
 
                     sleep_duration: float = (parse_time(record[TIME_OFFSET]) - (datetime.now() - time_shift)).total_seconds()
@@ -131,15 +134,21 @@ def parser_run(csv_file: str, queue) -> None:
                         print("[PARSER] Parser lag:", -sleep_duration, "s")
                     
 
-                    queue.send(csv_row_to_redis(record, current_time))
+                    pipe.send(csv_row_to_redis(record, current_time))
                 # out_start = time.time()
-                records = next(generator)
+                wait_start = time.time()
+                records = data_queue.get()
+                wait_end = time.time()
+                print("Main threadWaited for", wait_end - wait_start)
                 # out_end = time.time()
                 # print("Generator call took:", out_end - out_start, "Got len(records):", len(records))
         except StopIteration:
             return
     except KeyboardInterrupt:
         return
+    finally:
+        if csv_read_thread:
+            csv_read_thread.join()
     
 
 # def parse_csv(csv_file: str) -> Generator[list[str], None, None]:
