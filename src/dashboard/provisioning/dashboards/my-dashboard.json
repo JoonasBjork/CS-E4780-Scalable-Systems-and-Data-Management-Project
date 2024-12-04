@@ -125,7 +125,7 @@
           "table": "alerts"
         }
       ],
-      "title": "Invalid events",
+      "title": "Events with errors",
       "type": "stat"
     },
     {
@@ -257,7 +257,7 @@
           }
         }
       ],
-      "title": "Bullish stocks in latest window",
+      "title": "Most recent bullish stocks",
       "type": "logs"
     },
     {
@@ -427,7 +427,7 @@
           }
         }
       ],
-      "title": "Most popular stocks in most recent window",
+      "title": "Popular stocks in recent window",
       "type": "barchart"
     },
     {
@@ -744,10 +744,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -854,10 +850,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
