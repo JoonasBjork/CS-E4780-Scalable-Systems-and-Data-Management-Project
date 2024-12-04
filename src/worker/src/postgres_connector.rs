@@ -21,7 +21,7 @@ pub fn create_postgres_client(
         if already_tried >= retries || client_connection.is_ok() {
             break;
         }
-        println!("Retrying to connect to psql in {}", wait_time_in_seconds);
+        // println!("Retrying to connect to psql in {}", wait_time_in_seconds);
         already_tried += 1;
         thread::sleep(Duration::from_secs(wait_time_in_seconds));
     }
@@ -135,30 +135,30 @@ pub fn wait_for_migration(
                     .all(|&table_name| db_table_names.contains(&table_name.to_string()));
 
                 if all_tables_present {
-                    println!("All tables are present!");
+                    // println!("All tables are present!");
                     return Ok(());
                 } else {
-                    println!(
-                            "Postgre missing tables: {:?}",
-                            table_names
-                                .iter()
-                                .filter(|&&table_name| !db_table_names.contains(&table_name.to_string()))
-                                .collect::<Vec<&&str>>()
-                        );
+                    // println!(
+                    //         "Postgre missing tables: {:?}",
+                    //         table_names
+                    //             .iter()
+                    //             .filter(|&&table_name| !db_table_names.contains(&table_name.to_string()))
+                    //             .collect::<Vec<&&str>>()
+                    //     );
                 }
             }
             Err(_) => {
-                println!("Got error when querying psql tables");
+                // println!("Got error when querying psql tables");
             }
         }
 
         if already_tried >= retries {
             return Err(());
         }
-        println!(
-            "Retrying to check if psql migration has been succesful {}",
-            wait_time_in_seconds
-        );
+        // println!(
+        //     "Retrying to check if psql migration has been succesful {}",
+        //     wait_time_in_seconds
+        // );
         already_tried += 1;
         thread::sleep(Duration::from_secs(wait_time_in_seconds));
     }

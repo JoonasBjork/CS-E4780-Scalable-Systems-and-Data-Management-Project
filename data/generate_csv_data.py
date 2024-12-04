@@ -9,7 +9,7 @@ with open("unique_symbols.txt") as f:
 
 # print(symbols)
 
-output_length = 1_000_000
+output_length = 300_000
 
 # Start generating data with random symbols
 

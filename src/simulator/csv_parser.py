@@ -75,7 +75,7 @@ def parser_run(csv_file: str, queue) -> None:
 
 
         print("[PARSER] Starting to add items to queue")
-        print("[PARSER] first_record", first_record)
+        # print("[PARSER] first_record", first_record)
 
         try:
             iter = 0
@@ -101,18 +101,20 @@ def parser_run(csv_file: str, queue) -> None:
                 # record[TIME_OFFSET] = current_time.strftime("%H:%M:%S.%f")
                 record[DATE_OFFSET] = current_time.strftime("%d-%m-%Y")
 
-                if iter % 1000 == 0:
-                    print("[PARSER] iter:", iter)
-                    print("[PARSER] Parser lag:", -sleep_duration, "s")
+                # if iter % 1000 == 0:
+                #     print("[PARSER] iter:", iter)
+                #     print("[PARSER] Parser lag:", -sleep_duration, "s")
                     # print("Record:", record)
                 
 
                 queue.send(csv_row_to_redis(record, current_time))
                 # queue.put(csv_rsow_to_redis(record, timestamp))
-                
+
         except StopIteration:
+            print("StopIteration called, CSV PARSER EXITING")
             return
     except KeyboardInterrupt:
+        print("KeyboardInterrupt called, CSV PARSER EXITING")
         return
     
 

@@ -60,6 +60,9 @@ def publisher_run_redis(queue) -> None:
                
                 iter += 1
 
+                # Do three times :)
+                pipeline.xadd(stream_name, item)
+                pipeline.xadd(stream_name, item)
                 pipeline.xadd(stream_name, item)
             pipeline.execute()      
             # if len(items) != 0:

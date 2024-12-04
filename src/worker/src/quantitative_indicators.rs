@@ -54,7 +54,7 @@ impl QuantitativeIndicator {
             .num_milliseconds()
             .try_into()
             .unwrap_or_else(|_| {
-                eprintln!("ERROR: Duration exceeds i32 range; setting to maximum/minimum value");
+                // eprintln!("ERROR: Duration exceeds i32 range; setting to maximum/minimum value");
                 i32::MAX
             });
         QuantitativeIndicator {
@@ -84,7 +84,7 @@ impl QuantitativeIndicator {
             .num_milliseconds()
             .try_into()
             .unwrap_or_else(|_| {
-                eprintln!("ERROR: Duration exceeds i32 range; setting to maximum/minimum value");
+                // eprintln!("ERROR: Duration exceeds i32 range; setting to maximum/minimum value");
                 i32::MAX
             });
         self.most_recent_value = Some(most_recent_value);

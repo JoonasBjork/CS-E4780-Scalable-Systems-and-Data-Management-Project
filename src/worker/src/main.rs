@@ -68,8 +68,12 @@ fn main() -> Result<(), RedisError> {
     );
 
     match migration_succesful {
-        Ok(_) => println!("Migration has been succesfully applied to psql"),
-        Err(_) => println!("Migration has not been applied to psql"),
+        Ok(_) => {
+            println!("Migration has been succesfully applied to psql")
+        }
+        Err(_) => {
+            println!("Migration has not been applied to psql")
+        }
     }
 
     drop(initial_postgres_client);
@@ -103,12 +107,12 @@ fn main() -> Result<(), RedisError> {
                         for entry in stream.ids {
                             latest_id = entry.id.clone();
 
-                            if iter % 1000 == 0 {
-                                println!(
-                                    "Reading values from stream {}, iter {}, latest_id {}",
-                                    &stream_key, iter, latest_id
-                                );
-                            }
+                            // if iter % 1000 == 0 {
+                            //     println!(
+                            //         "Reading values from stream {}, iter {}, latest_id {}",
+                            //         &stream_key, iter, latest_id
+                            //     );
+                            // }
 
                             iter += 1;
 
@@ -189,12 +193,14 @@ fn main() -> Result<(), RedisError> {
 
                         match xdel_result {
                             Ok(_) => {}
-                            Err(e) => println!("ERROR IN del_result: {}", e),
+                            Err(e) => {
+                                // println!("ERROR IN del_result: {}", e)
+                            }
                         }
                     }
                 }
                 Err(e) => {
-                    println!("Error reading from Redis: {}", e);
+                    // println!("Error reading from Redis: {}", e);
                 }
             }
         }
@@ -230,13 +236,13 @@ fn main() -> Result<(), RedisError> {
             let alert_res = insert_alerts(&mut postgres_client, &entry_vec);
             match alert_res {
                 Ok(changed_lines) => {
-                    println!(
-                        "Alert_consumer added {} lines to postgre alerts",
-                        changed_lines
-                    )
+                    // println!(
+                    //     "Alert_consumer added {} lines to postgre alerts",
+                    //     changed_lines
+                    // )
                 }
                 Err(e) => {
-                    println!("Alert_consumer got error while adding to postgres: {}", e)
+                    // println!("Alert_consumer got error while adding to postgres: {}", e)
                 }
             }
         }
@@ -272,7 +278,7 @@ fn main() -> Result<(), RedisError> {
             drop(read_lock);
 
             if quant_indicators.is_empty() {
-                println!("QUANT INDICATORS IS EMPTY, SKIPPING...");
+                // println!("QUANT INDICATORS IS EMPTY, SKIPPING...");
                 continue;
             }
 
@@ -283,12 +289,14 @@ fn main() -> Result<(), RedisError> {
                 let insert_indicators_res = insert_indicators(&mut postgres_client, chunk);
                 match insert_indicators_res {
                     Ok(changed_lines) => {
-                        println!(
-                            "EMA consumer added {} lines to postgre indicators",
-                            changed_lines
-                        )
+                        // println!(
+                        //     "EMA consumer added {} lines to postgre indicators",
+                        //     changed_lines
+                        // )
                     }
-                    Err(e) => println!("Ema consumer got error while adding to postgres: {}", e),
+                    Err(e) => {
+                        // println!("Ema consumer got error while adding to postgres: {}", e)
+                    }
                 }
             }
         }
