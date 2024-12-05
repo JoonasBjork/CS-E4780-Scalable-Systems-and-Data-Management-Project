@@ -26,7 +26,13 @@ fn float_from_value(ov: Option<&Value>) -> Option<f64> {
                 // In case that the input is given as a string and not as a float
                 match std::str::from_utf8(f) {
                     Ok(s) => match s.parse::<f64>() {
-                        Ok(float_value) => Some(float_value),
+                        Ok(float_value) => {
+                            if !float_value.is_finite() {
+                                // println!("GOT NAN/INF FLOAT VALUE");
+                                return None;
+                            }
+                            Some(float_value)
+                        }
                         Err(_) => None,
                     },
                     Err(_) => None,
