@@ -1,0 +1,21 @@
+CSV read time for 1 million records: 19.74822497367859
+-> 50 637 records per second from test CSV with limited data
+
+Redis write time for 1 million records: 66.52457451820374
+-> 15 032 records per second
+
+Redis write time for 1 million records when worker is reading from redis: 78.13671898841858
+-> 12 798 records per second
+
+Two simulators writing 1 million records to redis: 75.91515231132507
+-> 13 173 records per second
+
+Both the CSV reading and the publishing: 25.24778127670288, 25.266722202301025
+-> 39 607 records per second
+
+
+Worker reading same value from redis: 45.800
+-> 21 834 records per second
+
+Worker time when running with the full pipeline: 26.244
+-> 38 103 records per second
