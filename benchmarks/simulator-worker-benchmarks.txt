@@ -19,3 +19,6 @@ Worker reading same value from redis: 45.800
 
 Worker time when running with the full pipeline: 26.244
 -> 38 103 records per second
+
+7 Simulators, 1 worker running at full speed minimum time for processing 1 mil events: 16.333
+-> 61 225 records per second
