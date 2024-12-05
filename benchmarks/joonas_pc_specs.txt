@@ -1,0 +1,3 @@
+i7-4770 4 cores 8 threads @ 3.4 MHz
+Memory: 16,0 GB @ 1333 MHz
+Storage: Samsung SATA SSD 860 EVO 2 TB, google says 550 MB/s read speeds
