@@ -1,0 +1,29 @@
+1 worker 1 simulator: 899994 events, 508 ms
+2 worker 1 simulator: 899994 events, 551 ms
+3 worker 1 simulator: 899994 events, 473 ms
+
+1 worker 2 simulator: 1799988 events, 502 ms
+2 worker 2 simulator: 1799988 events, 477 ms
+3 worker 2 simulator: 1799988 events, 517 ms
+
+1 worker 3 simulator: 2699982 events, 525 ms
+2 worker 3 simulator: 2699982 events, 542 ms
+3 worker 3 simulator: 2699982 events, 516 ms
+
+1 worker 4 simulator: 3599976 events, 528 ms
+2 worker 4 simulator: 3599976 events, 504 ms
+3 worker 4 simulator: 3599976 events, 504 ms
+
+1 worker 5 simulator: 4499970 events, 663 ms
+2 worker 5 simulator: 4499970 events, 539 ms
+3 worker 5 simulator: 4499970 events, 521 ms
+
+1 worker 6 simulator: 5104365 events, 900 ms
+2 worker 6 simulator: 5399964 events, 538 ms
+
+2 worker 7 simulator: 5988192 events, 923 ms
+2 worker 8 simulator: 6448528 events, 850 ms
+
+3 worker 7 simulator: 6172881 events, 768 ms
+
+
