@@ -93,6 +93,8 @@ services:
       - WORKER_COUNT=${WORKER_COUNT}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - CSV_FILE=${CSV_FILE}
+      - FILE_OFFSET_BYTES=${FILE_OFFSET_BYTES}
 
   grafana:
     container_name: grafana
