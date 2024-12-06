@@ -19,7 +19,7 @@ def parse_time(time_str: str) -> datetime:
         timestamp = datetime.strptime(time_str, "%H:%M:%S.%f").time()
         timestamp = datetime.combine(today, timestamp)
         return timestamp
-    except ValueError as e:
+    except Exception as e:
         raise ValueError(f"Invalid time format: {time_str}") from e
 
 def csv_row_to_redis(row: list[str], exact_time: Optional[datetime]) -> Dict[str, str]:
@@ -49,12 +49,18 @@ def read_batch_from_offset(filename: str, start_offset: int, chunk_size: int = 1
     file = open(filename, 'r')
     file.seek(start_offset)
     if start_offset:
-        print(file.readline())
+        while True:
+            next_line = file.readline()
+            if len(list(csv.reader([next_line]))[0]) == 40:
+                break
+    
     chunks = pd.read_csv(
         file,
         skip_blank_lines=False,
-        chunksize=chunk_size
+        chunksize=chunk_size,
+        index_col=False        
     )
+
     for chunk in chunks:
         for _, line in chunk.iterrows():
             yield line.tolist()
@@ -68,11 +74,11 @@ def parser_run(csv_file: str, queue) -> None:
         # Start the file from 15:00
         generator = read_batch_from_offset(csv_file, FILE_OFFSET_BYTES)
         first_record = next(generator)
-        while first_record[TIME_OFFSET] == '':
+        while pd.isna(first_record[TIME_OFFSET]):
             first_record = next(generator)
-
+            
         time_shift = datetime.now() - parse_time(first_record[TIME_OFFSET])
-
+     
 
         print("[PARSER] Starting to add items to queue")
         print("[PARSER] first_record", first_record)
