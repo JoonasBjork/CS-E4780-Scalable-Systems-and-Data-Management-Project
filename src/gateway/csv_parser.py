@@ -51,7 +51,8 @@ def read_batch_from_offset(filename: str, start_offset: int, chunk_size: int = 1
     if start_offset:
         while True:
             next_line = file.readline()
-            if len(list(csv.reader([next_line]))[0]) == 40:
+            if len(list(csv.reader([next_line]))[0]) == 39:
+                # print(next_line)
                 break
     try:
         chunks = pd.read_csv(
@@ -82,8 +83,8 @@ def parser_run(csv_file: str, queue) -> None:
             
         time_shift = datetime.now() - parse_time(first_record[TIME_OFFSET])
      
-        # print("[PARSER] Starting to add items to queue")
-        # print("[PARSER] first_record", first_record)
+        print("[PARSER] Starting to add items to queue")
+        print("[PARSER] first_record", first_record)
 
         try:
             iter = 0
