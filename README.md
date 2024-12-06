@@ -18,6 +18,24 @@ Starting up the application requires
 - Configure important variables for the system in .env file
 - Start the system with docker compose 
 
+## Dataset
+
+You can download the daily trading dataset from: https://zenodo.org/records/6382482
+
+The csv files should be put in the data folder. The structure of the folder is as follows
+
+```
+project directory
+|__ data
+|   |__ debs2022-gc-trading-day-08-11-21.csv
+|   |__ debs2022-gc-trading-day-09-11-21.csv
+|   |__ ...
+|__ ...
+|__ .env
+|__ README.md
+
+```
+
 ## Template variables
 The configuration of the system can be found in the .env files consists of the following important variables
 
@@ -29,13 +47,22 @@ The configuration of the system can be found in the .env files consists of the f
 | CSV_FILE                   | The path of the mounted csv file. The csv file should be in data folder, and the path is in form /data/{csv_filename}     |
 | FILE_OFFSET_BYTES          | The gateway simulator also supports reading the csv file from a specific byte offset (Default value is 1) |
 
+For the above folder structure, the environment can be set as follows:
+ Variable                    | Value                                          |
+| --------                   | -------                                        |
+| SIMULATOR_COUNT            | 1                                              |
+| WORKER_COUNT               | 1                                              |
+| WORKER_WINDOW_SIZE_SECONDS | 10                                             |
+| CSV_FILE                   | /data/debs2022-gc-trading-day-08-11-21.csv     |
+| FILE_OFFSET_BYTES          | 1                                              |
+
 
 ## Start the system
-The application can be started with running
+The application can be started with running docker compose at the project base directory
 ```shell
 docker compose up
 ```
-After this, the visualization of the system can be found at [here](http://localhost:9999/d/ee39jei2kml1cc/my-dashboard?orgId=1&from=now-5m&to=now&timezone=browser&var-stock_id=MT.NL&var-WORKER_WINDOW_SIZE_SECONDS=10&var-SHOW_MOST_RECENT=10&refresh=10s) (http://localhost:9999/). 
+After this, the visualization of the system can be found at [here](http://localhost:9999/d/ee39jei2kml1cc/my-dashboard?orgId=1&from=now-5m&to=now&timezone=browser&var-stock_id=MT.NL&var-WORKER_WINDOW_SIZE_SECONDS=10&var-SHOW_MOST_RECENT=10&refresh=10s) (http://localhost:9999/). Please wait a bit for the system to start. 
 
 # Repository Structure
 
@@ -75,7 +102,7 @@ Technology: Redis
 
 ### gateway/
 
-The Simulator is responsible for simulating a stock exchange gateway that receives data from a stock exchange and forward the data to the corresponding worker. In this project, to simulate that process, the gateway simulator read the csv file and send the event to the corresponding Redis queue.
+The Gateway Simulator is responsible for simulating a stock exchange gateway that receives data from a stock exchange and forward the data to the corresponding worker. In this project, to simulate that process, the gateway simulator read the csv file and send the event to the corresponding Redis queue.
 
 Technology: Python
 
