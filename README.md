@@ -18,6 +18,7 @@ Starting up the application requires
 - Configure important variables for the system in .env file
 - Start the system with docker compose 
 
+
 ## Dataset
 
 You can download the daily trading dataset from: https://zenodo.org/records/6382482
@@ -63,6 +64,16 @@ The application can be started with running docker compose at the project base d
 docker compose up
 ```
 After this, the visualization of the system can be found at [here](http://localhost:9999/d/ee39jei2kml1cc/my-dashboard?orgId=1&from=now-5m&to=now&timezone=browser&var-stock_id=MT.NL&var-WORKER_WINDOW_SIZE_SECONDS=10&var-SHOW_MOST_RECENT=10&refresh=10s) (http://localhost:9999/). Please wait a bit for the system to start. 
+
+
+# Stop/Restart
+if you want to stop/restart with running
+The application can be started with running
+```shell
+docker compose down
+```
+In restart, try start again after this command.
+
 
 # Repository Structure
 
