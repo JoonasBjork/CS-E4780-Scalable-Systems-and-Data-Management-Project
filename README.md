@@ -5,7 +5,7 @@ This repository contains the final project for the CS-E4780 Scalable Systems and
 The goal of the project was to develop a high-performance application for processing and visualizing stock market data from three different stock exchanges. In addition to this, the application aims to find key metrics from the data that are then displayed to a user. 
 
 The application consists of the following components:
-- A Simulator for simulating the constant flow of new stock marked datapoints by sending the data to a Redis broker. 
+- A Gateway simulator for simulating the constant flow of new stock marked datapoints by sending the data to a Redis broker. 
 - A Redis pub/sub broker forward stock datapoints to the corresponding worker node.
 - Worker nodes, which received stock events, calculate the important metrics such as EMA, bullish/bearish breakout pattern, detect invalid event and send these informatino to the database.  
 - A Database, which stores data produced by the worker nodes.
@@ -73,12 +73,7 @@ The folder contains the redis configuration file.
 
 Technology: Redis
 
-### manager
-The folder contains the code for a depricated design. 
-
-Technology: Javascript
-
-### simulator/
+### gateway/
 
 The Simulator is responsible for simulating a stock exchange gateway that receives data from a stock exchange and forward the data to the corresponding worker. In this project, to simulate that process, the gateway simulator read the csv file and send the event to the corresponding Redis queue.
 

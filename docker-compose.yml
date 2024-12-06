@@ -75,9 +75,9 @@ services:
       # - flyway.placeholders.worker_window_size_seconds=${WORKER_WINDOW_SIZE_SECONDS}
       - WORKER_WINDOW_SIZE_SECONDS=${WORKER_WINDOW_SIZE_SECONDS}
 
-  simulator:
+  gateway:
     build:
-      context: ./src/simulator
+      context: ./src/gateway
       dockerfile: Dockerfile
     depends_on:
       redis-streams:
@@ -88,7 +88,7 @@ services:
     volumes:
       - ./data/:/data
     deploy:
-      replicas: ${SIMULATOR_COUNT}
+      replicas: ${GATEWAY_COUNT}
     environment:
       - WORKER_COUNT=${WORKER_COUNT}
       - REDIS_HOST=${REDIS_HOST}
